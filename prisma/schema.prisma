@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  HR
+  ADMIN
+}
+
+enum OrderStatus {
+  RESERVED
+  COLLECTED
+  CANCELLED
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  role         Role         @default(EMPLOYEE)
+  active       Boolean      @default(true)
+  balance      Int          @default(0)
+  createdAt    DateTime     @default(now())
+  sessions     Session[]
+  ledger       Ledger[]
+  orders       Order[]
+  completions  Completion[]
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  description String
+  imageUrl    String
+  category    String
+  price       Int
+  active      Boolean @default(true)
+  batches     Batch[]
+  orders      Order[]
+}
+
+model Batch {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  productId   String
+  product     Product      @relation(fields: [productId], references: [id])
+  expiresAt   DateTime
+  quantity    Int
+  allocations Allocation[]
+
+  @@index([productId, expiresAt])
+}
+
+model Order {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  productId   String
+  product     Product      @relation(fields: [productId], references: [id])
+  quantity    Int
+  cost        Int
+  status      OrderStatus  @default(RESERVED)
+  createdAt   DateTime     @default(now())
+  allocations Allocation[]
+
+  @@index([userId, createdAt])
+}
+
+model Allocation {
+  id       String @id @default(cuid())
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id])
+  batchId  String
+  batch    Batch  @relation(fields: [batchId], references: [id])
+  quantity Int
+}
+
+model Ledger {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  amount      Int
+  description String
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Mission {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  reward      Int
+  question    String
+  options     Json
+  answer      Int
+  active      Boolean      @default(true)
+  endsAt      DateTime
+  completions Completion[]
+}
+
+model Completion {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  missionId String
+  mission   Mission  @relation(fields: [missionId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, missionId])
+}
+
+model Audit {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+}
+
+model LoginAttempt {
+  key     String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+}
