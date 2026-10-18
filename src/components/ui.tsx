@@ -5,7 +5,9 @@ import {
   Coins,
   Leaf,
   Users,
-  ShoppingBag,
+  Wallet,
+  Gift,
+  Sparkles,
 } from "lucide-react";
 export const number = (n: number) => n.toLocaleString("pt-BR");
 export const date = (d: Date) =>
@@ -48,7 +50,7 @@ export function Stats({
 }: {
   items: { label: string; value: string; detail: string }[];
 }) {
-  const icons = [ShoppingBag, Coins, Users, Leaf];
+  const icons = [Wallet, Coins, Gift, Sparkles];
   return (
     <div className="stats-grid">
       {items.map((item, i) => {

@@ -1,3 +1,4 @@
+import { Brand } from "@/components/brand";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { Navigation } from "@/components/navigation";
@@ -13,17 +14,14 @@ export default async function AppLayout({
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link href="/" className="brand">
-          <img src="/brand.svg" width="40" height="40" alt="" />
-          <span>
-            amazonitos<small>STORE</small>
-          </span>
-        </Link>
         <Navigation role={user.role} />
         <div className="sidebar-footer">FEITO PARA QUEM FAZ A DIFERENÇA</div>
       </aside>
       <div className="workspace">
         <header className="topbar">
+          <Link href="/" className="brand header-brand">
+            <Brand />
+          </Link>
           <div className="workspace-label">
             Programa de reconhecimento <span>•</span> Colaboradores
           </div>

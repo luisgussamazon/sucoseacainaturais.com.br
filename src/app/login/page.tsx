@@ -1,3 +1,4 @@
+import { Brand } from "@/components/brand";
 import { login } from "@/lib/actions";
 import { currentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -14,10 +15,7 @@ export default async function Login({
     <div className="login-shell">
       <section className="login-story">
         <div className="brand">
-          <img src="/brand.svg" width="44" height="44" alt="" />
-          <span>
-            amazonitos<small>STORE</small>
-          </span>
+          <Brand />
         </div>
         <div>
           <div className="hero-tag">

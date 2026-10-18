@@ -1,12 +1,5 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  Sparkles,
-  Leaf,
-  ShoppingBag,
-  Coins,
-  ArrowUpRight,
-} from "lucide-react";
+import { ArrowRight, Sparkles, Leaf, Coins, ArrowUpRight } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Empty, number, SectionHeading, Stats, date } from "@/components/ui";
@@ -85,24 +78,27 @@ export default async function Home() {
             <br />
             Você ganha. O planeta também.
           </p>
-          <Link href="/loja" className="button lime">
+          <Link href="/loja" className="button hero-cta">
             Explorar a loja
             <ArrowRight size={17} />
           </Link>
         </div>
         <div className="hero-art" aria-hidden="true">
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
-          <span className="spark s1">✦</span>
-          <span className="spark s2">✦</span>
-          <div className="floating-tag">
-            <Leaf size={16} /> Menos desperdício
-          </div>
-          <div className="hero-coin">
-            a<span>AMAZONITOS</span>
-          </div>
-          <div className="floating-bottom">
-            <ShoppingBag size={17} /> Mais oportunidades
+          <img
+            className="hero-scene"
+            src="/images/amazonitos-hero.webp"
+            alt=""
+            width="1536"
+            height="1024"
+            fetchPriority="high"
+          />
+          <div className="hero-art-note">
+            <Leaf size={21} />
+            <span>
+              Menos desperdício.
+              <br />
+              Mais possibilidades.
+            </span>
           </div>
         </div>
       </section>
