@@ -40,7 +40,7 @@ export default async function Login({
         <small>Amazonitos: moeda fictícia, sem valor monetário real.</small>
       </section>
       <section className="login-form">
-        <div className="eyebrow">BEM-VINDO À AMAZONITOS STORE</div>
+        <div className="eyebrow">BEM-VINDO AO SSD VBJ2</div>
         <h2>
           Seu próximo passo
           <br />

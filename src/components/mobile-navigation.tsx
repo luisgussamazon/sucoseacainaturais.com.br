@@ -103,7 +103,7 @@ export function MobileNavigation({ role }: { role: string }) {
             aria-labelledby="mobile-menu-title"
           >
             <div className="mobile-drawer-heading">
-              <h2 id="mobile-menu-title">Seu espaço Amazonitos</h2>
+              <h2 id="mobile-menu-title">Seu espaço SSD VBJ2</h2>
               <button
                 type="button"
                 className="mobile-menu-close"

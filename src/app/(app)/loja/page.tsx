@@ -41,7 +41,7 @@ export default async function Store({
     <>
       <PageTitle
         eyebrow="ESCOLHAS QUE VALEM MAIS"
-        title="Amazonitos Store"
+        title="SSD VBJ2"
         description="Encontre seu próximo resgate e ajude a reduzir o desperdício."
       />
       <Flash error={error} />

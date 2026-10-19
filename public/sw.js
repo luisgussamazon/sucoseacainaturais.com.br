@@ -1,5 +1,5 @@
 /* Only explicitly public assets may enter CacheStorage. Never cache user pages or API/RSC responses. */
-const CACHE_NAME = "amazonitos-public-v1";
+const CACHE_NAME = "amazonitos-public-v2";
 const PUBLIC_ASSETS = [
   "/offline.html",
   "/brand.svg",
@@ -48,7 +48,7 @@ self.addEventListener("fetch", (event) => {
         ).match("/offline.html");
         return (
           response ||
-          new Response("Sem conexão. Reconecte-se para acessar o Amazonitos.", {
+          new Response("Sem conexão. Reconecte-se para acessar o SSD VBJ2.", {
             status: 503,
             headers: {
               "Content-Type": "text/plain; charset=utf-8",

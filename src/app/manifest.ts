@@ -2,9 +2,10 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "AMAZONITOS STORE",
-    short_name: "Amazonitos",
-    description: "Sua loja interna de reconhecimento e consumo consciente.",
+    name: "SSD VBJ2",
+    short_name: "SSD VBJ2",
+    description:
+      "SSD VBJ2: sua plataforma interna de reconhecimento e consumo consciente.",
     lang: "pt-BR",
     start_url: "/",
     scope: "/",

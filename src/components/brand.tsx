@@ -22,7 +22,7 @@ export function Brand() {
         />
       </svg>
       <span>
-        amazonitos<small>STORE</small>
+        SSD<small> VBJ2</small>
       </span>
     </>
   );

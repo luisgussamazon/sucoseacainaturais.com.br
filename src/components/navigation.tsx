@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 const links = [
   { href: "/", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/loja", label: "Amazonitos Store", icon: ShoppingBag },
+  { href: "/loja", label: "SSD VBJ2", icon: ShoppingBag },
   { href: "/carteira", label: "Minha carteira", icon: Wallet },
   { href: "/missoes", label: "Missões e quizzes", icon: Sparkles },
   { href: "/resgates", label: "Meus resgates", icon: PackageCheck },

@@ -1,4 +1,4 @@
-# AMAZONITOS STORE
+# SSD VBJ2
 
 Loja interna de colaboradores com Next.js App Router, TypeScript, Tailwind CSS, Prisma e PostgreSQL. Amazonitos são moedas fictícias, sem valor monetário real.
 

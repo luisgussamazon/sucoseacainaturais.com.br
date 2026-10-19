@@ -52,7 +52,7 @@ export default async function AppLayout({
         </header>
         <main>{children}</main>
         <footer className="page-footer">
-          <span>© {new Date().getFullYear()} Amazonitos Store</span>
+          <span>© {new Date().getFullYear()} SSD VBJ2</span>
           <span>
             Amazonitos são moedas fictícias, sem valor monetário real.
           </span>

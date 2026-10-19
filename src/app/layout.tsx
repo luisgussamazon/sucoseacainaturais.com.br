@@ -4,13 +4,14 @@ import "./globals.css";
 import "./redesign.css";
 import "./mobile.css";
 export const metadata: Metadata = {
-  title: "AMAZONITOS STORE · Cada conquista vale mais",
+  title: "SSD VBJ2",
+  applicationName: "SSD VBJ2",
   description:
-    "Loja interna de colaboradores. Conquiste Amazonitos, resgate produtos e ajude a reduzir o desperdício.",
+    "SSD VBJ2: plataforma interna de colaboradores. Conquiste Amazonitos, resgate produtos e ajude a reduzir o desperdício.",
   icons: { icon: "/brand.svg", apple: "/icons/apple-touch-icon.png" },
   appleWebApp: {
     capable: true,
-    title: "Amazonitos",
+    title: "SSD VBJ2",
     statusBarStyle: "default",
   },
 };

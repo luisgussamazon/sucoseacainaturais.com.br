@@ -147,10 +147,12 @@ test("ativação limpa somente caches antigos da própria PWA", async () => {
   await h.lifecycle("activate");
   assert.ok(!h.stores.has("amazonitos-public-old"));
   assert.ok(h.stores.has("unrelated-cache"));
-  assert.ok(h.stores.has("amazonitos-public-v1"));
+  assert.ok(h.stores.has("amazonitos-public-v2"));
 });
 test("manifest e ícones próprios têm dimensões válidas para instalação", () => {
   const m = manifest();
+  assert.equal(m.name, "SSD VBJ2");
+  assert.equal(m.short_name, "SSD VBJ2");
   assert.equal(m.display, "standalone");
   assert.equal(m.start_url, "/");
   assert.equal(m.scope, "/");

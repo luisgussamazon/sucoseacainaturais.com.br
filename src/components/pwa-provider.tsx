@@ -100,7 +100,7 @@ export function InstallApp() {
     }
   }
   return (
-    <section className="install-panel" aria-label="Instalar Amazonitos">
+    <section className="install-panel" aria-label="Instalar SSD VBJ2">
       {installed ? (
         <p className="install-status">
           <CheckCircle2 size={18} />
