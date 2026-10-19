@@ -126,12 +126,12 @@ export async function runImprovementChecks({
       .getByRole("heading", { name: "Bem-vindo ao SSD VBJ2!", level: 1 })
       .waitFor();
     assert.equal(
-      await g.page.locator('.sidebar a[href="/comunidade"]').count(),
+      await g.page.locator('.sidebar a[href="/comunidade"]:visible').count(),
       0,
     );
     await ok(a, "grant", { userId: genericUser.id, ...flags });
     await g.page.reload();
-    await g.page.locator('.sidebar a[href="/comunidade"]').waitFor();
+    await g.page.locator('.sidebar a[href="/comunidade"]:visible').waitFor();
     check(
       "Conceder e revogar permissões atualiza API e menu sem exigir novo login",
     );

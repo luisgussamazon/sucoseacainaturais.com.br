@@ -129,41 +129,20 @@ export async function CommunityFeed({
 }
 export async function CommunityAside({ user }: { user: Actor }) {
   const now = new Date();
-  const [missions, events, recognition] = await Promise.all([
-    db.mission.findMany({
-      where: {
-        active: true,
-        endsAt: { gt: now },
-        completions: { none: { userId: user.id } },
-        OR: [
-          { photoConfig: null },
-          { photoConfig: { status: "PUBLISHED", startsAt: { lte: now } } },
-        ],
-      },
-      orderBy: { endsAt: "asc" },
-      take: 4,
-      include: { photoConfig: { select: { id: true, media: photoSelect() } } },
-    }),
-    db.communityEvent.findMany({
-      where: { ...publishedWhere(user), endsAt: { gte: now } },
-      orderBy: { startsAt: "asc" },
-      take: 4,
-      include: { media: photoSelect() },
-    }),
-    db.communityPost.findMany({
-      where: {
-        ...publishedWhere(user),
-        OR: [
-          { category: "Reconhecimento" },
-          { completionId: { not: null } },
-          { evidenceId: { not: null } },
-        ],
-        publishedAt: { lte: now },
-      },
-      orderBy: { publishedAt: "desc" },
-      take: 3,
-    }),
-  ]);
+  const missions = await db.mission.findMany({
+    where: {
+      active: true,
+      endsAt: { gt: now },
+      completions: { none: { userId: user.id } },
+      OR: [
+        { photoConfig: null },
+        { photoConfig: { status: "PUBLISHED", startsAt: { lte: now } } },
+      ],
+    },
+    orderBy: { endsAt: "asc" },
+    take: 4,
+    include: { photoConfig: { select: { id: true, media: photoSelect() } } },
+  });
   return (
     <aside className="community-aside">
       <section className="panel">
@@ -187,69 +166,6 @@ export async function CommunityAside({ user }: { user: Actor }) {
               Amazonitos
             </span>
             <small>Até {date(m.endsAt)}</small>
-          </Link>
-        ))}
-      </section>
-      <section className="panel home-events" aria-label="Próximos eventos">
-        <div className="section-heading">
-          <h2>Próximos eventos</h2>
-          {rights(user).events && (
-            <Link href="/comunidade?kind=event#editor">Cadastrar evento</Link>
-          )}
-        </div>
-        {!events.length && (
-          <p className="muted">
-            Nenhum evento futuro ou em andamento foi publicado. Eventos em
-            rascunho não aparecem aqui.
-          </p>
-        )}
-        {events.map((e) => (
-          <div className="community-mini" key={e.id}>
-            <Link className="home-card-title" href={"/eventos/" + e.id}>
-              <strong>{e.title}</strong>
-            </Link>
-            <span>
-              {new Intl.DateTimeFormat("pt-BR", {
-                dateStyle: "short",
-                timeStyle: "short",
-                timeZone: "America/Sao_Paulo",
-              }).format(e.startsAt)}{" "}
-              · {e.location}
-            </span>
-            <p>{e.description}</p>
-            <Link href={"/eventos/" + e.id}>Ver detalhes do evento →</Link>
-            <PhotoGallery
-              photos={
-                e.imageAuthorization && e.restrictedChecked ? e.media : []
-              }
-              title={e.title}
-              interactive
-            />
-          </div>
-        ))}
-      </section>
-      <section className="panel home-recognition" aria-label="Reconhecimento">
-        <div className="section-heading">
-          <h2>Reconhecimento</h2>
-          {rights(user).recognize && (
-            <Link href="/comunidade/conquistas">Publicar conquista</Link>
-          )}
-        </div>
-        {!recognition.length && (
-          <p className="muted">
-            Nenhum reconhecimento foi publicado. A conclusão ou aprovação de uma
-            missão não autoriza sua divulgação automaticamente.
-          </p>
-        )}
-        {recognition.map((p) => (
-          <Link
-            className="community-mini"
-            href={"/mural?post=" + p.id}
-            key={p.id}
-          >
-            <strong>{p.title}</strong>
-            <small>{date(p.publishedAt)}</small>
-            <span>Ver reconhecimento →</span>
           </Link>
         ))}
       </section>

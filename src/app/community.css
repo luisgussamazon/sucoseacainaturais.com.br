@@ -1508,38 +1508,6 @@
   background: #f3f5f8;
 }
 
-.home-card-title {
-  color: #142b45;
-  text-decoration: none;
-}
-.home-card-title:hover {
-  text-decoration: underline;
-}
-.community-aside .section-heading {
-  gap: 12px;
-  align-items: start;
-  flex-wrap: wrap;
-}
-.community-aside .section-heading a {
-  font-size: 12px;
-}
-.event-details {
-  padding: 26px;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-.event-details dl {
-  display: grid;
-  gap: 8px;
-  margin: 24px 0;
-}
-.event-details dt {
-  font-weight: 700;
-}
-.event-details dd {
-  margin: 0 0 12px;
-  color: #5b718d;
-}
 .community-quick-actions {
   display: flex;
   gap: 10px;
@@ -1555,11 +1523,26 @@
   border: 1px solid #ffd6a0;
 }
 @media (max-width: 600px) {
-  .event-details {
-    padding: 18px;
-  }
   .community-quick-actions a {
     flex: 1;
     text-align: center;
+  }
+}
+
+/* The home feed uses the remaining width; the useful mission sidebar stays compact. */
+.home-community-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+}
+.home-community-layout > .community-main {
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .home-community-layout {
+    grid-template-columns: minmax(0, 1fr) 250px;
+  }
+}
+@media (max-width: 768px) {
+  .home-community-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
