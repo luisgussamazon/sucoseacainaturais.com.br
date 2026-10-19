@@ -26,7 +26,7 @@ O autor pode remover sua publicação. Outros usuários autenticados podem denun
 
 O resgate e a seleção FEFO não foram alterados. A transição administrativa existente foi extraída para `order-transition.ts`, mantendo autorização no chamador e a transação serializável. Header, sidebar, carteira, autenticação e navegação PWA permanecem inalterados.
 
-O Railway já executa `npm run db:migrate` em pré-deploy. A aplicação anterior continua compatível com as colunas adicionadas. Não é necessário recriar o banco nem redefinir credenciais.
+O `railway.json` declara `npm run db:migrate` em pré-deploy, mas a configuração efetiva do serviço não executou esse comando nesta publicação. A migração foi aplicada explicitamente via Railway SSH no projeto e serviço corretos e sua conclusão foi consultada no banco. Em futuras migrações, confirme a execução do comando antes de considerar a publicação concluída. A aplicação anterior continua compatível com as colunas adicionadas. Não é necessário recriar o banco nem redefinir credenciais.
 
 ## Validação reproduzível
 
