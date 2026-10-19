@@ -22,7 +22,7 @@ export function Brand() {
         />
       </svg>
       <span>
-        SSD<small> VBJ2</small>
+        VBJ2<small> SSD</small>
       </span>
     </>
   );

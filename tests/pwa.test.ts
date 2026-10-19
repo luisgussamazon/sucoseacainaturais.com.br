@@ -147,7 +147,7 @@ test("ativação limpa somente caches antigos da própria PWA", async () => {
   await h.lifecycle("activate");
   assert.ok(!h.stores.has("amazonitos-public-old"));
   assert.ok(h.stores.has("unrelated-cache"));
-  assert.ok(h.stores.has("amazonitos-public-v2"));
+  assert.ok(h.stores.has("amazonitos-public-v3"));
 });
 test("manifest e ícones próprios têm dimensões válidas para instalação", () => {
   const m = manifest();

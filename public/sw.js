@@ -1,5 +1,5 @@
 /* Only explicitly public assets may enter CacheStorage. Never cache user pages or API/RSC responses. */
-const CACHE_NAME = "amazonitos-public-v2";
+const CACHE_NAME = "amazonitos-public-v3";
 const PUBLIC_ASSETS = [
   "/offline.html",
   "/brand.svg",
