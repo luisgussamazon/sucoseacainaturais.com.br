@@ -573,3 +573,937 @@
   max-height: none;
   object-fit: contain;
 }
+
+/* Scoped administrative composition: preserve the desktop shell and other modules. */
+.community-management {
+  gap: 18px;
+  width: 100%;
+}
+.workspace main:has(> .community-management) {
+  max-width: none;
+}
+.community-page-heading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 4px 0;
+}
+.community-page-heading h1 {
+  font-size: 27px;
+  line-height: 1.2;
+  margin: 0 0 7px;
+}
+.community-page-heading p,
+.community-card-heading p {
+  color: #708199;
+  font-size: 12px;
+  margin: 0;
+}
+.community-heading-icon {
+  display: grid;
+  place-items: center;
+  background: #fff0df;
+  color: #ff8500;
+  border-radius: 13px;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+.community-page-heading > .button {
+  margin-left: auto;
+}
+.community-primary-tabs {
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid #e5eaf0;
+  background: #edf1f5;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+.community-primary-tabs a {
+  padding: 11px 27px;
+  border: 1px solid transparent;
+  border-radius: 24px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: #fff;
+  color: #42546e;
+}
+.community-primary-tabs a[aria-current="page"] {
+  border-color: #ff9900;
+  color: #f47c00;
+}
+.community-secondary-tabs {
+  gap: 8px;
+  font-size: 12px;
+}
+.community-secondary-tabs a {
+  padding: 6px 11px;
+  background: white;
+  border: 1px solid #e4eaf0;
+  border-radius: 7px;
+}
+.community-secondary-tabs:empty {
+  display: none;
+}
+.community-management .stats-grid {
+  margin: 0;
+  gap: 14px;
+}
+.community-management .stat-card {
+  position: relative;
+  padding: 19px 18px 17px 78px;
+  min-height: 110px;
+  border: 1px solid #e3e9ef;
+  border-radius: 11px;
+  box-shadow: 0 3px 12px #172d4510;
+}
+.community-management .stat-top {
+  display: block;
+  font-size: 12px;
+}
+.community-management .stat-icon {
+  position: absolute;
+  left: 18px;
+  top: 21px;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+}
+.community-management .stat-card strong {
+  font-size: 30px;
+  margin: 4px 0;
+}
+.community-management .stat-card small {
+  font-size: 11px;
+}
+.community-card-heading {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.community-card-heading h2 {
+  font-size: 18px;
+  margin: 0 0 5px;
+}
+.community-card-heading .community-heading-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+.publication-editor {
+  scroll-margin-top: 85px;
+}
+.community-management > .publication-editor,
+.community-management > .publication-list {
+  padding: 23px;
+  border: 1px solid #e3e9f0;
+  box-shadow: 0 3px 14px #172d4507;
+  border-radius: 12px;
+}
+.publication-form fieldset {
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  gap: 20px;
+}
+.publication-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  grid-template-areas: "title status" "description category" "description date" "album event";
+  gap: 14px 18px;
+  align-content: start;
+}
+.composer-title {
+  grid-area: title;
+}
+.composer-status {
+  grid-area: status;
+}
+.composer-description {
+  grid-area: description;
+  position: relative;
+}
+.composer-category {
+  grid-area: category;
+}
+.composer-date {
+  grid-area: date;
+}
+.composer-album {
+  grid-area: album;
+}
+.composer-event {
+  grid-area: event;
+}
+.publication-form .field {
+  font-size: 12px;
+  font-weight: 600;
+  gap: 7px;
+  min-width: 0;
+}
+.publication-form input:not([type="checkbox"]),
+.publication-form select {
+  font-size: 12px;
+  height: 38px;
+  padding: 8px 11px;
+  border-radius: 7px;
+}
+.publication-form textarea {
+  font-size: 12px;
+  min-height: 120px;
+  height: 100%;
+  padding: 12px 12px 26px;
+}
+.composer-description small {
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  color: #7c8da3;
+  font-size: 11px;
+  font-weight: 400;
+}
+.publication-photos {
+  border-left: 1px solid #e5ebf1;
+  padding-left: 21px;
+  min-width: 0;
+}
+.publication-photos h3 {
+  font-size: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 12px;
+}
+.publication-photos h3 svg {
+  color: #ff8500;
+}
+.photo-upload-composer {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.photo-upload-composer .photo-upload-actions {
+  justify-content: flex-end;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+.photo-upload-composer .button {
+  font-size: 11px;
+  padding: 7px 10px;
+  min-height: 32px;
+}
+.upload-dropzone {
+  width: 100%;
+  min-height: 142px;
+  background: #fbfcfe;
+  border: 1px dashed #d3deeb;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  color: #6b7d96;
+  font-size: 11px;
+}
+.upload-dropzone > span:first-child {
+  font-size: 36px;
+  color: #1688ff;
+  line-height: 1;
+}
+.upload-dropzone strong {
+  color: #182b46;
+  font-size: 12px;
+}
+.photo-upload-composer > small {
+  display: block;
+  font-size: 10px;
+  color: #73859d;
+  margin: 8px 0 12px;
+}
+.photo-upload-composer .selected-photos {
+  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  gap: 8px;
+}
+.photo-upload-composer .selected-photo {
+  padding: 4px;
+  gap: 4px;
+}
+.photo-upload-composer .selected-photo > img {
+  height: 75px;
+}
+.photo-upload-composer .selected-photo > span {
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.photo-upload-composer .photo-cover,
+.photo-upload-composer .photo-order-controls button {
+  font-size: 10px;
+  min-height: 25px;
+  padding: 4px;
+}
+.add-more-photos {
+  border: 1px dashed #d3deeb;
+  border-radius: 8px;
+  background: #fbfcfe;
+  color: #8190a6;
+  font-size: 27px;
+  min-height: 90px;
+  cursor: pointer;
+}
+.add-more-photos small {
+  display: block;
+  font-size: 10px;
+}
+.publication-confirmations {
+  border-top: 1px solid #e4eaf1;
+  padding-top: 18px;
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1.2fr;
+  gap: 17px;
+}
+.publication-form .check {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.publication-form .check small {
+  display: block;
+  color: #8190a5;
+  font-size: 10px;
+}
+.publication-form fieldset > .button[type="submit"] {
+  grid-column: 2;
+  justify-self: end;
+  margin: 0;
+  min-height: 40px;
+}
+.publication-form .clear-publication {
+  grid-column: 1;
+  grid-row: 3;
+  justify-self: end;
+  margin: 0;
+  min-height: 40px;
+}
+.publication-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.publication-list-header .community-card-heading {
+  margin: 0;
+}
+.publication-filters {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.publication-filters input,
+.publication-filters select {
+  min-width: 0;
+  border: 1px solid #dbe3ed;
+  border-radius: 7px;
+  padding: 9px;
+  font: inherit;
+  font-size: 11px;
+  background: white;
+}
+.publication-filters input {
+  width: 185px;
+}
+.publication-filters .button {
+  font-size: 11px;
+  padding: 8px;
+}
+.publication-table-head,
+.publication-table-row {
+  display: grid;
+  grid-template-columns:
+    minmax(200px, 3fr) minmax(90px, 1fr) minmax(80px, 0.9fr)
+    minmax(120px, 1.2fr) minmax(85px, 0.8fr) 80px;
+  gap: 13px;
+  align-items: center;
+}
+.publication-table-head {
+  padding: 12px;
+  background: #f4f7fa;
+  font-size: 10px;
+  color: #6d809a;
+}
+.publication-table-row.community-management-row {
+  padding: 13px 12px;
+  margin: 0;
+  border-bottom: 1px solid #e9edf2;
+  font-size: 12px;
+  display: grid;
+}
+.publication-content {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+.publication-content > div {
+  min-width: 0;
+}
+.publication-content strong {
+  font-size: 12px;
+}
+.publication-content p {
+  font-size: 11px;
+  color: #7a8ba0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 5px 0;
+}
+.publication-content .community-gallery {
+  width: 60px;
+  flex: 0 0 60px;
+  margin: 0;
+}
+.publication-content .community-gallery > .gallery-cover {
+  aspect-ratio: 1.3;
+}
+.publication-content .community-gallery > p {
+  display: none;
+}
+.publication-placeholder {
+  background: #fff1e1;
+  color: #ff8500;
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 42px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.publication-category,
+.publication-status {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  background: #fff0df;
+  color: #e98308;
+}
+.publication-status {
+  background: #edf0f4;
+  color: #74849b;
+}
+.status-PUBLISHED {
+  background: #e7f6ec;
+  color: #28884d;
+}
+.status-SCHEDULED {
+  background: #e8f1ff;
+  color: #2677c3;
+}
+.publication-table-row small {
+  display: block;
+  font-size: 10px;
+  color: #7c8ba0;
+  margin-top: 4px;
+}
+.publication-engagement,
+.publication-engagement span,
+.publication-actions {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.publication-engagement span {
+  gap: 4px;
+  color: #6d82a2;
+  font-size: 11px;
+}
+.publication-engagement span:first-child svg {
+  color: #ff5880;
+}
+.publication-actions a {
+  padding: 8px;
+  border: 1px solid #dfe6ef;
+  border-radius: 7px;
+  color: #58718f;
+  background: #fafcff;
+}
+@media (min-width: 1100px) and (max-width: 1450px) {
+  .publication-list-header {
+    align-items: flex-start;
+  }
+  .publication-filters {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .publication-filters input {
+    width: 150px;
+  }
+  .publication-table-head,
+  .publication-table-row {
+    gap: 9px;
+    grid-template-columns: minmax(160px, 2.7fr) 1fr 0.9fr 1.2fr 0.8fr 75px;
+  }
+}
+@media (max-width: 1099px) {
+  .publication-form fieldset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .publication-photos {
+    border-left: 0;
+    border-top: 1px solid #e5ebf1;
+    padding: 18px 0 0;
+  }
+  .publication-form fieldset > .button[type="submit"] {
+    grid-column: 1;
+  }
+  .publication-form .clear-publication {
+    grid-row: auto;
+    justify-self: start;
+  }
+  .publication-list-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .publication-table-head {
+    display: none;
+  }
+  .publication-table-row.community-management-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid #e4eaf1;
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+  .publication-content {
+    grid-column: 1/-1;
+  }
+  .publication-actions {
+    justify-content: flex-end;
+  }
+  .publication-confirmations {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+@media (max-width: 600px) {
+  .community-page-heading {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .community-page-heading > div {
+    flex: 1;
+    min-width: 0;
+  }
+  .community-page-heading h1 {
+    font-size: 21px;
+  }
+  .community-page-heading p {
+    font-size: 11px;
+  }
+  .community-page-heading > .button {
+    width: 100%;
+    justify-content: center;
+    margin: 3px 0;
+  }
+  .community-primary-tabs a {
+    padding: 10px 17px;
+  }
+  .community-management .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+  .community-management .stat-card {
+    padding: 12px;
+    min-height: 139px;
+  }
+  .community-management .stat-icon {
+    position: static;
+    width: 32px;
+    height: 32px;
+    margin-bottom: 6px;
+  }
+  .community-management .stat-top {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    font-size: 11px;
+  }
+  .community-management .stat-card strong {
+    font-size: 25px;
+  }
+  .community-management .stat-card small {
+    display: block;
+    font-size: 10px;
+  }
+  .community-management > .publication-editor,
+  .community-management > .publication-list {
+    padding: 14px;
+  }
+  .community-card-heading h2 {
+    font-size: 16px;
+  }
+  .community-card-heading p {
+    font-size: 11px;
+  }
+  .publication-fields {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "title" "status" "description" "category" "date" "album" "event";
+  }
+  .publication-form textarea {
+    min-height: 130px;
+  }
+  .publication-form input:not([type="checkbox"]),
+  .publication-form select {
+    height: 44px;
+    font-size: 14px;
+  }
+  .publication-filters {
+    flex-wrap: wrap;
+  }
+  .publication-filters input {
+    width: 100%;
+    flex: 1 0 100%;
+  }
+  .publication-filters select {
+    flex: 1;
+    width: 110px;
+  }
+  .publication-form .check {
+    font-size: 12px;
+  }
+  .publication-form .clear-publication,
+  .publication-form fieldset > .button[type="submit"] {
+    width: 100%;
+    justify-content: center;
+  }
+  .photo-upload-composer .photo-upload-actions > .button {
+    width: auto;
+    flex: 1;
+  }
+  .photo-upload-composer .selected-photos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .photo-upload-composer .photo-order-controls button {
+    min-height: 36px;
+  }
+  .publication-table-row.community-management-row {
+    padding: 12px;
+  }
+  .publication-table-row time {
+    font-size: 11px;
+  }
+}
+
+.photo-upload-composer .selected-photo {
+  position: relative;
+}
+.photo-upload-composer .photo-order-controls button:last-child {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  border-radius: 50%;
+  background: white;
+  padding: 4px;
+  min-height: 24px;
+  width: 24px;
+  display: grid;
+  place-items: center;
+}
+.photo-upload-composer.is-dragging .upload-dropzone {
+  border-color: #ff9900;
+  background: #fff3e4;
+}
+
+.community-management {
+  position: relative;
+}
+.community-tools {
+  position: absolute;
+  right: 10px;
+  top: 92px;
+  z-index: 4;
+  font-size: 12px;
+}
+.community-tools summary {
+  padding: 11px 15px;
+  border-radius: 8px;
+  border: 1px solid #dce4ed;
+  background: white;
+  cursor: pointer;
+  color: #4c6380;
+}
+.community-tools .community-secondary-tabs {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  width: 230px;
+  padding: 10px;
+  background: white;
+  box-shadow: 0 8px 30px #132b4520;
+  display: grid;
+  gap: 5px;
+}
+.community-tools .community-secondary-tabs a {
+  border: 0;
+  padding: 10px;
+}
+.community-primary-tabs {
+  padding-right: 160px;
+  min-height: 47px;
+}
+.community-management .button:not(.secondary) {
+  color: white;
+}
+.publication-form .button.secondary,
+.publication-filters .button.secondary,
+.photo-upload-composer .photo-upload-actions .button {
+  background: #f5f7fa;
+  color: #526680;
+  border: 1px solid #dfe6ef;
+  box-shadow: none;
+}
+.publication-form fieldset {
+  column-gap: 14px;
+  row-gap: 14px;
+}
+.publication-editor .community-card-heading {
+  margin-bottom: 15px;
+}
+.publication-fields {
+  gap: 12px 16px;
+}
+.publication-form input:not([type="checkbox"]),
+.publication-form select {
+  min-height: 36px;
+  height: 36px;
+}
+.publication-form textarea {
+  min-height: 110px;
+}
+.publication-photos {
+  position: relative;
+  padding-top: 0;
+}
+.publication-photos h3 {
+  margin-bottom: 52px;
+}
+.photo-upload-composer .photo-upload-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  gap: 5px;
+}
+.photo-upload-composer .photo-upload-actions .button {
+  min-height: 30px;
+  height: 30px;
+  font-size: 10px;
+  padding: 6px 8px;
+}
+.upload-dropzone {
+  min-height: 130px;
+}
+.photo-upload-composer .selected-photos {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.photo-upload-composer .selected-photo {
+  border: 0;
+  padding: 0;
+  min-height: 75px;
+}
+.photo-upload-composer .selected-photo > img {
+  height: 65px;
+}
+.photo-upload-composer .selected-photo > span {
+  display: none;
+}
+.photo-upload-composer .photo-cover {
+  font-size: 9px;
+  min-height: 22px;
+  height: 22px;
+  padding: 2px;
+}
+.photo-upload-composer .photo-order-controls {
+  height: 22px;
+  gap: 4px;
+}
+.photo-upload-composer .photo-order-controls button {
+  min-height: 22px;
+  height: 22px;
+  min-width: 22px;
+  padding: 2px;
+}
+.photo-upload-composer .photo-order-controls button:last-child {
+  top: 3px;
+  right: 3px;
+}
+.photo-upload-composer .add-more-photos {
+  min-height: 65px;
+  align-self: start;
+  height: 65px;
+  font-size: 22px;
+}
+.photo-upload-composer .add-more-photos small {
+  font-size: 9px;
+}
+.publication-form .clear-publication {
+  justify-self: end;
+  grid-column: 2;
+  grid-row: 3;
+  margin-right: 160px;
+}
+.publication-form fieldset > .button[type="submit"] {
+  grid-row: 3;
+  min-width: 145px;
+}
+.publication-confirmations {
+  padding-top: 15px;
+  gap: 14px;
+}
+.publication-confirmations .check {
+  align-items: flex-start;
+}
+.publication-confirmations .check input {
+  min-height: 0;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+.publication-content .community-gallery > .gallery-count {
+  display: none;
+}
+.publication-content .community-gallery > .gallery-cover {
+  background: #f3f5f8;
+  border: 0;
+  padding: 0;
+}
+.publication-content .community-gallery {
+  align-self: center;
+}
+@media (min-width: 1100px) {
+  .community-management > .publication-editor {
+    padding: 20px;
+  }
+  .publication-photos h3 {
+    margin-bottom: 38px;
+  }
+  .publication-form .check {
+    font-size: 10px;
+  }
+  .publication-confirmations {
+    grid-column: 1;
+    grid-row: 2;
+    grid-template-columns: 1fr 1.3fr 1.1fr;
+    margin-right: -65%;
+    padding-right: 300px;
+    width: 165%;
+    min-height: 55px;
+  }
+  .publication-form fieldset > .button[type="submit"],
+  .publication-form .clear-publication {
+    grid-row: 2;
+    align-self: end;
+    margin-top: 10px;
+    min-height: 37px;
+    font-size: 11px;
+    padding: 9px 12px;
+  }
+  .publication-form .clear-publication {
+    margin-right: 155px;
+    z-index: 1;
+  }
+  .publication-form .check small {
+    font-size: 9px;
+  }
+}
+@media (max-width: 1099px) {
+  .publication-photos {
+    padding-top: 18px;
+  }
+  .photo-upload-composer .photo-upload-actions {
+    top: 16px;
+  }
+  .publication-form .clear-publication {
+    grid-column: 1;
+    grid-row: auto;
+    margin-right: 0;
+    justify-self: start;
+  }
+  .publication-form fieldset > .button[type="submit"] {
+    grid-row: auto;
+  }
+  .publication-form input:not([type="checkbox"]),
+  .publication-form select {
+    min-height: 44px;
+  }
+}
+@media (max-width: 600px) {
+  .community-tools {
+    position: relative;
+    top: auto;
+    right: auto;
+    justify-self: start;
+  }
+  .community-tools .community-secondary-tabs {
+    left: 0;
+    right: auto;
+    top: 44px;
+  }
+  .community-primary-tabs {
+    padding-right: 5px;
+  }
+  .publication-photos h3 {
+    margin-bottom: 60px;
+  }
+  .photo-upload-composer .photo-upload-actions {
+    top: 50px;
+    left: 0;
+    right: auto;
+    width: 100%;
+  }
+  .photo-upload-composer .selected-photos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .photo-upload-composer .selected-photo > img {
+    height: 75px;
+  }
+  .photo-upload-composer .photo-order-controls {
+    height: 36px;
+  }
+  .photo-upload-composer .photo-order-controls button {
+    min-height: 32px;
+    min-width: 32px;
+    height: 32px;
+  }
+  .publication-form .check {
+    font-size: 12px;
+  }
+  .publication-form fieldset > .button[type="submit"] {
+    min-height: 44px;
+  }
+}
+@media (min-width: 1100px) {
+  .publication-confirmations {
+    grid-column: 1/-1;
+    width: auto;
+    margin-right: 0;
+    padding-right: 300px;
+  }
+}
+
+.publication-thumbnail {
+  width: 60px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 7px;
+  flex: 0 0 60px;
+  background: #f3f5f8;
+}

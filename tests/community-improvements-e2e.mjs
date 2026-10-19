@@ -108,6 +108,7 @@ export async function runImprovementChecks({
     await g.page
       .getByRole("heading", { name: "Comunidade e Eventos", level: 1 })
       .waitFor();
+    await g.page.locator(".community-tools summary:visible").click();
     await g.page
       .getByRole("link", { name: "Gerenciar fotos", exact: true })
       .waitFor();

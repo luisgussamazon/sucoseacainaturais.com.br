@@ -1,4 +1,14 @@
-﻿import Link from "next/link";
+import { PublicationEditor } from "@/components/publication-editor";
+import {
+  Users,
+  Plus,
+  FileText,
+  Heart,
+  MessageCircle,
+  Pencil,
+  ExternalLink,
+} from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { rights, photoGuidance } from "@/lib/community";
@@ -9,12 +19,13 @@ import {
 } from "@/lib/community-options";
 import { communityActor } from "@/components/community-server";
 import {
+  PublicationThumbnail,
   MissionTypeSelect,
   CommunityForm,
   PhotoUpload,
   PhotoGallery,
 } from "@/components/community-client";
-import { PageTitle, Stats, date } from "@/components/ui";
+import { Stats, date } from "@/components/ui";
 const iso = (d?: Date) =>
   d ? new Date(d.getTime() - 3 * 3600000).toISOString().slice(0, 16) : "";
 function Input({
@@ -77,6 +88,8 @@ export default async function Management({
     page?: string;
     completion?: string;
     evidence?: string;
+    category?: string;
+    sort?: string;
   }>;
 }) {
   const u = await communityActor(),
@@ -107,7 +120,20 @@ export default async function Management({
   const search = q
     ? { title: { contains: q, mode: "insensitive" as const } }
     : {};
-  const filter = p.id ? { id: p.id } : search;
+  const filter = p.id
+    ? { id: p.id }
+    : {
+        ...search,
+        ...(p.category ? { category: p.category.slice(0, 100) } : {}),
+      };
+  const brasiliaToday = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const monthStart = new Date(
+    `${brasiliaToday.find((p) => p.type === "year")!.value}-${brasiliaToday.find((p) => p.type === "month")!.value}-01T00:00:00-03:00`,
+  );
   const [
     posts,
     albums,
@@ -122,10 +148,17 @@ export default async function Management({
     r.publish || r.recognize || r.photos
       ? db.communityPost.findMany({
           where: kind === "post" || kind === "recognition" ? filter : {},
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: p.sort === "oldest" ? "asc" : "desc" },
           take: 30,
           skip: p.id ? 0 : (page - 1) * 30,
           include: {
+            author: { select: { name: true } },
+            _count: {
+              select: {
+                likes: true,
+                comments: { where: { hidden: false, deletedAt: null } },
+              },
+            },
             media: {
               where: { expiresAt: { gt: new Date() } },
               select: { id: true },
@@ -245,7 +278,7 @@ export default async function Management({
       db.communityPost.count({
         where: { status: "PUBLISHED", publishedAt: { lte: new Date() } },
       }),
-      db.photoEvidence.count(),
+      db.photoEvidence.count({ where: { submittedAt: { gte: monthStart } } }),
       db.photoEvidence.count({ where: { status: "PENDING" } }),
       db.photoEvidence.count({ where: { status: "APPROVED" } }),
     ]),
@@ -309,33 +342,68 @@ export default async function Management({
   const action = kind === "recognition" ? "post" : kind;
   return (
     <div className="community-management">
-      <PageTitle
-        eyebrow="COMUNICAÇÃO E ENGAJAMENTO"
-        title="Comunidade e Eventos"
-        description="Acesso por permissões individuais, com imagens autorizadas e dados protegidos."
-      />
-      <nav className="community-tabs" aria-label="Gestão da comunidade">
-        {r.publish && <Link href="?kind=post">Publicações</Link>}
-        {r.photos && <Link href="?kind=photos">Gerenciar fotos</Link>}
-        {r.albums && <Link href="?kind=album">Álbuns</Link>}
-        {r.events && <Link href="?kind=event">Eventos</Link>}
-        {r.missions && (
-          <>
-            <Link href="?kind=photo-mission">Missões com foto</Link>
-            <Link href="?kind=quiz-mission">Quizzes</Link>
-          </>
+      <div className="community-page-heading">
+        <span className="community-heading-icon">
+          <Users size={26} />
+        </span>
+        <div>
+          <h1>Comunidade e Eventos</h1>
+          <p>
+            Acesso por permissões individuais, com imagens autorizadas e dados
+            protegidos.
+          </p>
+        </div>
+        {r.publish && (
+          <Link className="button" href="/comunidade?kind=post#editor">
+            <Plus size={18} /> Nova publicação
+          </Link>
         )}
-        {r.recognize && (
-          <Link href="/comunidade/conquistas">
-            Conquistas aguardando publicação
+      </div>
+      <nav className="community-primary-tabs" aria-label="Áreas da comunidade">
+        {r.publish && (
+          <Link
+            aria-current={kind === "post" ? "page" : undefined}
+            href="?kind=post"
+          >
+            Publicações
           </Link>
         )}
         {r.review && (
           <Link href="/comunidade/evidencias">Evidências pendentes</Link>
         )}
-        {r.moderate && <Link href="?kind=comments">Comentários</Link>}
-        {r.manage && <Link href="?kind=access">Permissões</Link>}
+        {r.moderate && (
+          <Link
+            aria-current={kind === "comments" ? "page" : undefined}
+            href="?kind=comments"
+          >
+            Comentários
+          </Link>
+        )}
       </nav>
+      <details className="community-tools">
+        <summary>Mais ferramentas</summary>
+        <nav
+          className="community-tabs community-secondary-tabs"
+          aria-label="Gestão da comunidade"
+        >
+          {r.photos && <Link href="?kind=photos">Gerenciar fotos</Link>}
+          {r.albums && <Link href="?kind=album">Álbuns</Link>}
+          {r.events && <Link href="?kind=event">Eventos</Link>}
+          {r.missions && (
+            <>
+              <Link href="?kind=photo-mission">Missões com foto</Link>
+              <Link href="?kind=quiz-mission">Quizzes</Link>
+            </>
+          )}
+          {r.recognize && (
+            <Link href="/comunidade/conquistas">
+              Conquistas aguardando publicação
+            </Link>
+          )}
+
+          {r.manage && <Link href="?kind=access">Permissões</Link>}
+        </nav>
+      </details>
       <Stats
         items={[
           {
@@ -346,7 +414,7 @@ export default async function Management({
           {
             label: "Participações em fotos",
             value: String(counts[1]),
-            detail: "Dados reais",
+            detail: "Dados neste mês",
           },
           {
             label: "Evidências pendentes",
@@ -360,21 +428,31 @@ export default async function Management({
           },
         ]}
       />
-      <form className="community-filters">
-        <input type="hidden" name="kind" value={kind} />
-        <label>
-          Buscar
-          <input name="q" defaultValue={q} maxLength={100} />
-        </label>
-        <button className="button">Buscar</button>
-      </form>
+      {kind !== "post" && (
+        <form className="community-filters">
+          <input type="hidden" name="kind" value={kind} />
+          <label>
+            Buscar
+            <input name="q" defaultValue={q} maxLength={100} />
+          </label>
+          <button className="button">Buscar</button>
+        </form>
+      )}
       {!permitted && (
         <p className="notice error">
           Seu acesso a esta área não está concedido. O administrador pode
           habilitar a permissão individual.
         </p>
       )}
-      {creator && canEdit && (
+      {kind === "post" && canEdit && !post?.completionId && (
+        <PublicationEditor
+          post={post}
+          albums={albums}
+          events={events}
+          photos={r.photos}
+        />
+      )}
+      {creator && canEdit && (kind !== "post" || !!post?.completionId) && (
         <section className="panel" id="editor">
           <h2>
             {p.id ? "Editar" : "Criar"}{" "}
@@ -731,30 +809,150 @@ export default async function Management({
         </section>
       )}
       {canEdit && ["post", "recognition"].includes(kind) && (
-        <section className="panel">
-          <h2>Publicações</h2>
-          {!posts.length && <p>Nenhuma publicação cadastrada.</p>}
-          {posts.map((x) => (
-            <div className="community-management-row" key={x.id}>
-              <strong>{x.title}</strong>
-              <span>
-                {x.status === "PUBLISHED" && x.publishedAt > new Date()
-                  ? "Agendado"
-                  : x.status}
+        <section className="panel publication-list">
+          <div className="publication-list-header">
+            <div className="community-card-heading">
+              <span className="community-heading-icon">
+                <FileText size={23} />
               </span>
-              <Link
-                href={
-                  "?kind=" +
-                  (x.completionId ? "recognition" : "post") +
-                  "&id=" +
-                  x.id +
-                  "#editor"
-                }
-              >
-                Editar / arquivar
-              </Link>
+              <div>
+                <h2>Publicações</h2>
+                <p>
+                  Gerencie as publicações da comunidade e acompanhe o
+                  engajamento.
+                </p>
+              </div>
             </div>
-          ))}
+            <form className="publication-filters">
+              <input type="hidden" name="kind" value={kind} />
+              <input
+                name="q"
+                aria-label="Buscar publicações"
+                placeholder="Buscar publicações..."
+                defaultValue={q}
+              />
+              <select
+                aria-label="Filtrar categoria"
+                name="category"
+                defaultValue={p.category ?? ""}
+              >
+                <option value="">Todas as categorias</option>
+                {categories.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+              <select
+                name="sort"
+                aria-label="Ordenar publicações"
+                defaultValue={p.sort ?? "newest"}
+              >
+                <option value="newest">Mais recentes</option>
+                <option value="oldest">Mais antigas</option>
+              </select>
+              <button className="button secondary">Filtrar</button>
+            </form>
+          </div>
+          <div
+            className="publication-table"
+            role="table"
+            aria-label="Publicações"
+          >
+            <div className="publication-table-head" role="row">
+              {[
+                "Conteúdo",
+                "Categoria",
+                "Status",
+                "Data de publicação",
+                "Engajamento",
+                "Ações",
+              ].map((t) => (
+                <span role="columnheader" key={t}>
+                  {t}
+                </span>
+              ))}
+            </div>
+            {!posts.length && <p>Nenhuma publicação cadastrada.</p>}
+            {posts.map((x) => {
+              const scheduled =
+                x.status === "PUBLISHED" && x.publishedAt > new Date();
+              return (
+                <article
+                  role="row"
+                  className="publication-table-row community-management-row"
+                  key={x.id}
+                >
+                  <div role="cell" className="publication-content">
+                    <PublicationThumbnail id={x.media[0]?.id} title={x.title} />
+                    <div>
+                      <strong>{x.title}</strong>
+                      <p>{x.description.slice(0, 110)}</p>
+                    </div>
+                  </div>
+                  <div role="cell">
+                    <span className="publication-category">{x.category}</span>
+                  </div>
+                  <div role="cell">
+                    <span
+                      className={
+                        "publication-status status-" +
+                        (scheduled ? "SCHEDULED" : x.status)
+                      }
+                    >
+                      {scheduled
+                        ? "Agendado"
+                        : x.status === "PUBLISHED"
+                          ? "Publicado"
+                          : x.status === "DRAFT"
+                            ? "Rascunho"
+                            : "Arquivado"}
+                    </span>
+                  </div>
+                  <div role="cell">
+                    <time>
+                      {new Intl.DateTimeFormat("pt-BR", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                        timeZone: "America/Sao_Paulo",
+                      }).format(x.publishedAt)}
+                    </time>
+                    <small>por {x.author.name}</small>
+                  </div>
+                  <div role="cell" className="publication-engagement">
+                    <span>
+                      <Heart size={16} />
+                      {x._count.likes}
+                    </span>
+                    <span>
+                      <MessageCircle size={16} />
+                      {x._count.comments}
+                    </span>
+                  </div>
+                  <div role="cell" className="publication-actions">
+                    <Link
+                      aria-label={"Editar / arquivar: " + x.title}
+                      href={
+                        "?kind=" +
+                        (x.completionId ? "recognition" : "post") +
+                        "&id=" +
+                        x.id +
+                        "#editor"
+                      }
+                    >
+                      <Pencil size={16} />
+                    </Link>
+                    {x.status === "PUBLISHED" && !scheduled && (
+                      <Link
+                        aria-label={"Ver publicação: " + x.title}
+                        href={"/mural?post=" + x.id}
+                      >
+                        <ExternalLink size={16} />
+                      </Link>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         </section>
       )}
       {canEdit && kind === "album" && (
@@ -961,7 +1159,11 @@ export default async function Management({
               "&page=" +
               (page - 1) +
               "&q=" +
-              encodeURIComponent(q)
+              encodeURIComponent(q) +
+              "&category=" +
+              encodeURIComponent(p.category ?? "") +
+              "&sort=" +
+              encodeURIComponent(p.sort ?? "newest")
             }
           >
             Anteriores
@@ -974,7 +1176,11 @@ export default async function Management({
             "&page=" +
             (page + 1) +
             "&q=" +
-            encodeURIComponent(q)
+            encodeURIComponent(q) +
+            "&category=" +
+            encodeURIComponent(p.category ?? "") +
+            "&sort=" +
+            encodeURIComponent(p.sort ?? "newest")
           }
         >
           Próxima página

@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { CloudUpload, X, FileText } from "lucide-react";
 function updated() {
   window.dispatchEvent(new Event("community:updated"));
 }
@@ -16,11 +17,13 @@ export function CommunityForm({
   children,
   label = "Salvar",
   reset = false,
+  composer = false,
 }: {
   action: string;
   children: React.ReactNode;
   label?: string;
   reset?: boolean;
+  composer?: boolean;
 }) {
   const [pending, setPending] = useState(false),
     [message, setMessage] = useState(""),
@@ -89,9 +92,17 @@ export function CommunityForm({
     }
   }
   return (
-    <form className="community-form" onSubmit={submit}>
+    <form
+      className={"community-form" + (composer ? " publication-form" : "")}
+      onSubmit={submit}
+    >
       <fieldset disabled={pending}>
         {children}
+        {composer && (
+          <button className="button secondary clear-publication" type="reset">
+            Limpar
+          </button>
+        )}
         <button className="button" type="submit">
           {pending ? "Aguarde…" : label}
         </button>
@@ -125,9 +136,11 @@ type Selected = { key: string; file: File; url: string };
 export function PhotoUpload({
   required = false,
   max = 8,
+  compact = false,
 }: {
   required?: boolean;
   max?: number;
+  compact?: boolean;
 }) {
   const [photos, setPhotos] = useState<Selected[]>([]),
     [error, setError] = useState(""),
@@ -214,7 +227,11 @@ export function PhotoUpload({
     <div
       ref={box}
       data-cover={cover}
-      className={"photo-upload " + (drag ? "is-dragging" : "")}
+      className={
+        "photo-upload " +
+        (compact ? "photo-upload-composer " : "") +
+        (drag ? "is-dragging" : "")
+      }
       onDragOver={(e) => {
         e.preventDefault();
         setDrag(true);
@@ -232,7 +249,7 @@ export function PhotoUpload({
           type="button"
           onClick={() => picker.current?.click()}
         >
-          Adicionar fotos
+          {compact ? "Selecionar arquivos" : "Adicionar fotos"}
         </button>
         <button
           className="button secondary"
@@ -266,6 +283,17 @@ export function PhotoUpload({
           e.target.value = "";
         }}
       />
+      {compact && (
+        <button
+          type="button"
+          className="upload-dropzone"
+          onClick={() => picker.current?.click()}
+        >
+          <CloudUpload size={36} color="#1688ff" aria-hidden="true" />
+          <strong>Arraste e solte as imagens aqui</strong>
+          <span>ou clique para selecionar arquivos</span>
+        </button>
+      )}
       <small>
         Arraste fotos para esta área ou use os botões. Até {max} fotos, 4 MB por
         foto e 20 MB por envio.
@@ -313,11 +341,20 @@ export function PhotoUpload({
                 onClick={() => remove(p.key)}
                 aria-label={"Remover foto " + (i + 1)}
               >
-                Remover
+                {compact ? <X size={12} /> : "Remover"}
               </button>
             </div>
           </div>
         ))}
+        {compact && photos.length < max && (
+          <button
+            className="add-more-photos"
+            type="button"
+            onClick={() => picker.current?.click()}
+          >
+            ＋<small>Adicionar mais fotos</small>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -573,6 +610,7 @@ export function PhotoGallery({
         <div className="recent-photo-grid">
           {photos.slice(0, 6).map((p, i) => (
             <button
+              type="button"
               className="gallery-cover"
               key={p.id}
               onClick={() => setIndex(i)}
@@ -588,6 +626,7 @@ export function PhotoGallery({
         </div>
       ) : (
         <button
+          type="button"
           className="gallery-cover"
           onClick={() => setIndex(0)}
           aria-label={"Abrir fotos: " + title}
@@ -595,7 +634,11 @@ export function PhotoGallery({
           <img src={srcPrefix + photos[0].id} alt={title} loading="lazy" />
         </button>
       )}
-      <button className="gallery-count" onClick={() => setIndex(0)}>
+      <button
+        type="button"
+        className="gallery-count"
+        onClick={() => setIndex(0)}
+      >
         Ver todas as fotos ({photos.length})
       </button>
       <dialog
@@ -611,7 +654,11 @@ export function PhotoGallery({
         }}
         aria-label={"Galeria: " + title}
       >
-        <button className="button secondary" onClick={() => setIndex(null)}>
+        <button
+          type="button"
+          className="button secondary"
+          onClick={() => setIndex(null)}
+        >
           Fechar galeria
         </button>
         {current && (
@@ -622,6 +669,7 @@ export function PhotoGallery({
         )}
         <div className="gallery-controls">
           <button
+            type="button"
             className="button secondary"
             onClick={() =>
               setIndex((i) => ((i ?? 0) - 1 + photos.length) % photos.length)
@@ -633,6 +681,7 @@ export function PhotoGallery({
             {(index ?? 0) + 1} / {photos.length}
           </span>
           <button
+            type="button"
             className="button secondary"
             onClick={() => setIndex((i) => ((i ?? 0) + 1) % photos.length)}
           >
@@ -664,5 +713,58 @@ export function MissionTypeSelect({ value }: { value: string }) {
         <option value="quiz-mission">Quiz</option>
       </select>
     </label>
+  );
+}
+
+export function DescriptionField({ value = "" }: { value?: string }) {
+  const [text, setText] = useState(value);
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const form = ref.current?.form;
+    const reset = () => setText(value);
+    form?.addEventListener("reset", reset);
+    return () => form?.removeEventListener("reset", reset);
+  }, [value]);
+  return (
+    <label className="field composer-description">
+      Descrição{" "}
+      <textarea
+        ref={ref}
+        name="description"
+        required
+        maxLength={5000}
+        placeholder="Conte sobre o evento, conquista ou momento..."
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <small>{text.length}/5000</small>
+    </label>
+  );
+}
+
+export function PublicationThumbnail({
+  id,
+  title,
+}: {
+  id?: string;
+  title: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [id]);
+  return id && !failed ? (
+    <img
+      className="publication-thumbnail"
+      src={"/api/community/media/" + id}
+      alt={title}
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
+  ) : (
+    <span
+      className="publication-placeholder"
+      title="Fotografia protegida ou indisponível"
+    >
+      <FileText size={22} />
+    </span>
   );
 }
