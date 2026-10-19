@@ -80,15 +80,52 @@ export async function logout() {
 export async function redeem(f: FormData) {
   const user = await requireUser();
   const productId = str(f, "productId");
-  const quantity = positive.parse(f.get("quantity"));
-  let failed = false;
+  const parsed = z
+    .object({
+      quantity: positive,
+      expectedPrice: positive,
+      requestKey: z.string().uuid(),
+      confirmed: z.literal("yes"),
+    })
+    .safeParse({
+      quantity: f.get("quantity"),
+      expectedPrice: f.get("expectedPrice"),
+      requestKey: f.get("requestKey"),
+      confirmed: f.get("confirmed"),
+    });
+  if (!parsed.success)
+    return {
+      error: "Confira os dados e confirme o resgate antes de continuar.",
+    };
+  const { quantity, expectedPrice, requestKey } = parsed.data;
+  let orderId = "";
   try {
-    await transaction(async (tx) => {
+    orderId = await transaction(async (tx) => {
+      const replay = await tx.redemptionRequest.findUnique({
+        where: { userId_key: { userId: user.id, key: requestKey } },
+      });
+      if (replay) {
+        if (
+          replay.productId !== productId ||
+          replay.quantity !== quantity ||
+          replay.unitPrice !== expectedPrice
+        )
+          throw new Error(
+            "Confirmação incompatível. Abra novamente o produto.",
+          );
+        return replay.orderId;
+      }
       const product = await tx.product.findUniqueOrThrow({
         where: { id: productId },
       });
-      if (!product.active) throw new Error("Indisponível");
+      if (!product.active) throw new Error("Produto indisponível.");
+      if (product.price !== expectedPrice)
+        throw new Error(
+          "O preço mudou. Feche a confirmação e confira novamente o produto.",
+        );
       const cost = product.price * quantity;
+      if (!Number.isSafeInteger(cost) || cost > 2147483647)
+        throw new Error("Quantidade inválida.");
       const debit = await tx.user.updateMany({
         where: { id: user.id, active: true, balance: { gte: cost } },
         data: { balance: { decrement: cost } },
@@ -129,12 +166,66 @@ export async function redeem(f: FormData) {
       await tx.audit.create({
         data: { actorId: user.id, action: "REDEEM", details: order.id },
       });
+      await tx.redemptionRequest.create({
+        data: {
+          userId: user.id,
+          key: requestKey,
+          productId,
+          quantity,
+          unitPrice: expectedPrice,
+          orderId: order.id,
+        },
+      });
+      const recipients = await tx.user.findMany({
+        where: { active: true, role: { in: ["HR", "ADMIN"] } },
+        select: { id: true },
+      });
+      if (recipients.length)
+        await tx.redemptionNotice.createMany({
+          data: recipients.map((r) => ({
+            userId: r.id,
+            orderId: order.id,
+            createdAt: order.createdAt,
+          })),
+          skipDuplicates: true,
+        });
+      return order.id;
     });
-  } catch {
-    failed = true;
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const replay = await db.redemptionRequest.findUnique({
+        where: { userId_key: { userId: user.id, key: requestKey } },
+      });
+      if (
+        replay &&
+        replay.productId === productId &&
+        replay.quantity === quantity &&
+        replay.unitPrice === expectedPrice
+      )
+        orderId = replay.orderId;
+    }
+    if (!orderId)
+      return {
+        error:
+          error instanceof Error &&
+          [
+            "Saldo insuficiente",
+            "Estoque insuficiente.",
+            "Estoque alterado",
+            "Produto indisponível.",
+            "O preço mudou. Feche a confirmação e confira novamente o produto.",
+            "Confirmação incompatível. Abra novamente o produto.",
+            "Quantidade inválida.",
+          ].includes(error.message)
+            ? error.message
+            : "Não foi possível concluir. Nenhum novo pedido foi confirmado. Confira saldo e estoque e tente novamente.",
+      };
   }
   revalidatePath("/", "layout");
-  redirect(failed ? "/loja?error=redeem" : "/resgates?success=1");
+  redirect("/resgates?success=1&order=" + encodeURIComponent(orderId));
 }
 export async function completeMission(f: FormData) {
   const user = await requireUser();

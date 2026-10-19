@@ -1,0 +1,262 @@
+﻿.root {
+  position: relative;
+  flex-shrink: 0;
+}
+.bell {
+  position: relative;
+  width: 40px;
+  height: 42px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  color: #f5f8ff;
+  cursor: pointer;
+}
+.bell:hover {
+  background: #ffffff12;
+}
+.counter {
+  position: absolute;
+  right: 0;
+  top: 0;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 20px;
+  background: #ff9200;
+  color: #102333;
+  font-size: 9px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+  border: 1px solid #132333;
+}
+.panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 420px;
+  max-width: calc(100vw - 24px);
+  color: #12304b;
+  background: white;
+  border: 1px solid #dfe7ef;
+  border-radius: 16px;
+  box-shadow: 0 15px 65px #08213738;
+  z-index: 150;
+  overflow: hidden;
+  line-height: 1.5;
+  text-align: left;
+}
+.panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 17px 20px;
+  border-bottom: 1px solid #e7edf4;
+}
+.panel h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.panel header p {
+  font-size: 11px;
+  color: #71839a;
+  margin: 3px 0 0;
+}
+.panel button {
+  font: inherit;
+  cursor: pointer;
+}
+.panel > header button {
+  border: 0;
+  background: transparent;
+  color: #526a83;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+}
+.list {
+  max-height: min(590px, calc(100dvh - 210px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.list article {
+  padding: 17px 18px;
+  border-bottom: 1px solid #edf1f5;
+}
+.unread {
+  background: #fff9ef;
+  box-shadow: inset 3px 0 #ff9900;
+}
+.read {
+  background: #fff;
+}
+.title {
+  font-size: 9px;
+  letter-spacing: 0.7px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #b86300;
+  margin-bottom: 12px;
+}
+.title i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff9200;
+}
+.body {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 12px;
+}
+.image {
+  width: 70px;
+  height: 78px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f2f4f6;
+  display: grid;
+  place-items: center;
+}
+.image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.body h3 {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0 0 4px;
+  overflow-wrap: anywhere;
+}
+.body p {
+  font-size: 11px;
+  color: #5e738d;
+  margin: 3px 0;
+}
+.body time {
+  font-size: 10px;
+  color: #6b7d95;
+}
+.body .code {
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+.status {
+  display: inline-block;
+  font-size: 9px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  color: #8c5b17;
+  background: #fff0d4;
+  margin-top: 4px;
+}
+.list footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.list footer button {
+  border: 1px solid #dfe6ee;
+  background: white;
+  border-radius: 7px;
+  color: #48637e;
+  min-height: 38px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 8px 10px;
+}
+.list footer .view {
+  color: white;
+  background: #ff8a00;
+  border-color: #ff8a00;
+}
+.list button:disabled {
+  opacity: 0.5;
+}
+.empty {
+  text-align: center;
+  color: #72859c;
+  padding: 30px;
+  font-size: 12px;
+}
+.empty svg {
+  margin: auto;
+}
+.error {
+  padding: 12px;
+  background: #fff0f0;
+  color: #b53848;
+  font-size: 12px;
+}
+.panel nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 12px;
+  font-size: 11px;
+}
+.panel nav button {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #dfe6ef;
+  border-radius: 7px;
+  background: white;
+  color: #48637e;
+}
+.panel nav button:disabled {
+  opacity: 0.4;
+}
+@media (max-width: 1100px) {
+  .panel {
+    position: fixed;
+    top: 66px;
+    right: 12px;
+    width: min(420px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+  }
+  .bell {
+    width: 34px;
+    height: 38px;
+  }
+  .panel > header {
+    padding: 14px;
+  }
+  .list {
+    max-height: calc(100dvh - 230px);
+  }
+}
+@media (max-width: 360px) {
+  .list article {
+    padding: 14px;
+  }
+  .body {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .image {
+    width: 58px;
+    height: 70px;
+  }
+  .list footer button {
+    font-size: 9px;
+  }
+  .bell {
+    width: 30px;
+  }
+}

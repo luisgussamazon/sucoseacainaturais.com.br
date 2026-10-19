@@ -132,6 +132,9 @@ export default async function Orders({
         }
       />
       <RedemptionCenter
+        initialOrderId={
+          typeof params.order === "string" ? params.order : undefined
+        }
         orders={views}
         waiting={waiting._sum.quantity ?? 0}
         collected={collected._sum.quantity ?? 0}

@@ -1,3 +1,4 @@
+import { NotificationBell } from "@/components/notification-bell";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { Brand } from "@/components/brand";
 import Link from "next/link";
@@ -32,6 +33,7 @@ export default async function AppLayout({
             Programa de reconhecimento <span>•</span> Colaboradores
           </div>
           <div className="topbar-right">
+            {["HR", "ADMIN"].includes(user.role) && <NotificationBell />}
             <Link className="balance-pill" href="/carteira">
               <Coins size={18} />
               {user.balance.toLocaleString("pt-BR")} <span>Amazonitos</span>

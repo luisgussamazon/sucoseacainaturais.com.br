@@ -20,6 +20,8 @@ enum OrderStatus {
 }
 
 model User {
+  redemptionNotices RedemptionNotice[]
+  redemptionRequests RedemptionRequest[]
   id                      String             @id @default(cuid())
   name                    String
   email                   String             @unique
@@ -84,6 +86,8 @@ model Batch {
 }
 
 model Order {
+  notices RedemptionNotice[]
+  purchaseRequest RedemptionRequest?
   pickupCode String @unique @default(dbgenerated("gen_random_uuid()::text"))
   collectedAt DateTime?
   collectedById String?
@@ -449,4 +453,28 @@ model PickupAttempt {
  actorId String @id
  windowStart DateTime @default(now())
  attempts Int @default(0)
+}
+
+model RedemptionRequest {
+ userId String
+ user User @relation(fields:[userId], references:[id], onDelete:Restrict)
+ key String
+ productId String
+ quantity Int
+ unitPrice Int
+ orderId String @unique
+ order Order @relation(fields:[orderId], references:[id], onDelete:Restrict)
+ createdAt DateTime @default(now())
+ @@id([userId,key])
+}
+model RedemptionNotice {
+ id String @id @default(cuid())
+ userId String
+ user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+ orderId String
+ order Order @relation(fields:[orderId], references:[id], onDelete:Restrict)
+ readAt DateTime?
+ createdAt DateTime @default(now())
+ @@unique([userId,orderId])
+ @@index([userId,readAt,createdAt])
 }

@@ -209,7 +209,11 @@ try {
     (await e.locator(".stock:visible").innerText()).includes("4 unidades"),
   );
   await e.getByRole("button", { name: "Resgatar", exact: true }).click();
-  await e.waitForURL("**/resgates?success=1");
+  await e
+    .getByRole("dialog")
+    .getByRole("button", { name: "Confirmar resgate", exact: true })
+    .click();
+  await e.waitForURL(/resgates\?success=1/);
   assert.equal(
     (await db.user.findUniqueOrThrow({ where: { id: employee.id } })).balance,
     70,
@@ -252,7 +256,7 @@ try {
   );
   check("Quiz correto concede recompensa única");
   await a.goto("http://localhost:3147/admin");
-  const orderRow = a.locator("tr").filter({ hasText: order.id });
+  const orderRow = a.locator("tr:visible").filter({ hasText: order.id });
   await orderRow.locator("select[name=status]").selectOption("CANCELLED");
   await orderRow
     .getByRole("button", { name: "Confirmar", exact: true })
@@ -268,15 +272,29 @@ try {
   );
   check("Cancelamento estorna saldo e estoque");
   await e.goto("http://localhost:3147/loja");
-  await e
-    .locator(".product-card:visible input[name=quantity]")
-    .evaluate((el) => (el.value = "100"));
   await e.getByRole("button", { name: "Resgatar", exact: true }).click();
-  await e.waitForURL("**/loja?error=redeem");
+  await e.getByRole("dialog").getByLabel("Quantidade do resgate").waitFor();
+  await db.user.update({ where: { id: employee.id }, data: { balance: 0 } });
+  await e
+    .getByRole("dialog")
+    .getByRole("button", { name: "Confirmar resgate", exact: true })
+    .click();
+  await e
+    .getByRole("dialog")
+    .getByRole("alert")
+    .filter({ hasText: "Saldo insuficiente" })
+    .waitFor();
   assert.equal(
     (await db.user.findUniqueOrThrow({ where: { id: employee.id } })).balance,
-    120,
+    0,
   );
+  assert.equal(
+    await db.order.count({
+      where: { userId: employee.id, status: "RESERVED" },
+    }),
+    0,
+  );
+  await db.user.update({ where: { id: employee.id }, data: { balance: 120 } });
   check("Servidor rejeita resgate sem saldo e faz rollback");
   await db.batch.updateMany({
     where: { productId: p.id, code: "QA-LATE" },
@@ -291,10 +309,26 @@ try {
     e.getByRole("button", { name: "Resgatar", exact: true }).click(),
     concurrent.getByRole("button", { name: "Resgatar", exact: true }).click(),
   ]);
+  await Promise.all([e,concurrent].map(p=>p.waitForFunction(()=>Array.from(document.querySelectorAll('dialog[open] button')).some(b=>b.textContent==="Confirmar resgate"&&!b.disabled))));
   await Promise.all([
-    e.waitForURL(/(success=1|error=redeem)/),
-    concurrent.waitForURL(/(success=1|error=redeem)/),
+    e
+      .getByRole("dialog")
+      .getByRole("button", { name: "Confirmar resgate", exact: true })
+      .click(),
+    concurrent
+      .getByRole("dialog")
+      .getByRole("button", { name: "Confirmar resgate", exact: true })
+      .click(),
   ]);
+  await Promise.all(
+    [e, concurrent].map((p) =>
+      p.waitForFunction(
+        () =>
+          location.pathname === "/resgates" ||
+          !!document.querySelector('dialog[open] [role="alert"]'),
+      ),
+    ),
+  );
   assert.equal(
     await db.order.count({
       where: { userId: employee.id, status: "RESERVED" },

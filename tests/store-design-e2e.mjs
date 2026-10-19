@@ -142,7 +142,9 @@ export async function runStoreDesignChecks({
     await filter.getByLabel("Preço", { exact: true }).selectOption("up-to-20");
     await filter.getByRole("button", { name: "Buscar", exact: true }).click();
     await page.waitForURL(/price=up-to-20/);
-    await page.getByRole("heading", { name: "CAIXA MISTERIOSA MINI", exact: true }).waitFor();
+    await page
+      .getByRole("heading", { name: "CAIXA MISTERIOSA MINI", exact: true })
+      .waitFor();
     assert.equal(
       await page.locator(".store-page .product-card:visible").count(),
       2,
@@ -201,7 +203,11 @@ export async function runStoreDesignChecks({
     await page
       .getByRole("button", { name: "Resgatar agora", exact: true })
       .click();
-    await page.waitForURL(url => url.pathname === "/resgates");
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Confirmar resgate", exact: true })
+      .click();
+    await page.waitForURL((url) => url.pathname === "/resgates");
     assert.equal(
       (await db.user.findUniqueOrThrow({ where: { id: admin.id } })).balance,
       990,

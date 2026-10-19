@@ -16,8 +16,12 @@ type CheckedOrder = {
   collectedAt: string | null;
   collectedByName: string | null;
 };
-export function PickupDesk() {
-  const [order, setOrder] = useState<CheckedOrder | null>(null),
+export function PickupDesk({
+  initialOrder = null,
+}: {
+  initialOrder?: CheckedOrder | null;
+}) {
+  const [order, setOrder] = useState<CheckedOrder | null>(initialOrder),
     [message, setMessage] = useState(""),
     [error, setError] = useState(false),
     [pending, setPending] = useState(false);

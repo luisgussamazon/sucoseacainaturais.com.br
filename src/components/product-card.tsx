@@ -5,7 +5,7 @@ import {
 } from "@/lib/store-presentation";
 import { ProductImage } from "./product-image";
 import { Product, Batch } from "@prisma/client";
-import { redeem } from "@/lib/actions";
+import { PurchaseConfirmation } from "./purchase-confirmation";
 import { Coins, Clock3, Package } from "lucide-react";
 import { date, number } from "./ui";
 export function ProductCard({
@@ -72,19 +72,23 @@ export function ProductCard({
             <strong>{number(product.price)}</strong>
             <small>Amazonitos</small>
           </div>
-          <form action={redeem}>
-            <input type="hidden" name="productId" value={product.id} />
-            <input type="hidden" name="quantity" value="1" />
-            <button className="button compact" disabled={disabled}>
-              {!stock
+          <PurchaseConfirmation
+            productId={product.id}
+            name={product.name}
+            image={storePhotoSrc(product)}
+            price={product.price}
+            balance={balance}
+            disabled={disabled}
+            label={
+              !stock
                 ? "Esgotado"
                 : disabled
                   ? "Saldo insuficiente"
                   : tier
                     ? "Resgatar agora"
-                    : "Resgatar"}
-            </button>
-          </form>
+                    : "Resgatar"
+            }
+          />
         </div>
       </div>
     </article>

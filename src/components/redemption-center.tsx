@@ -129,6 +129,7 @@ export function SharePostActions({
 }
 export function RedemptionCenter({
   orders,
+  initialOrderId,
   waiting,
   collected,
   total,
@@ -136,6 +137,7 @@ export function RedemptionCenter({
   filters,
 }: {
   orders: RedemptionView[];
+  initialOrderId?: string;
   waiting: number;
   collected: number;
   total: number;
@@ -294,6 +296,22 @@ export function RedemptionCenter({
           </div>
         </article>
       </div>
+      {initialOrderId && orders.some((o) => o.id === initialOrderId) && (
+        <div className={styles.actions}>
+          <button
+            className={styles.primary}
+            onClick={() => {
+              const found = orders.find((o) => o.id === initialOrderId);
+              if (found) {
+                open(found);
+                setMode("receipt");
+              }
+            }}
+          >
+            Ver comprovante deste resgate
+          </button>
+        </div>
+      )}
       {canConfirm && (
         <Link className={styles.staffLink} href="/resgates/conferir">
           <ShieldCheck size={19} /> Conferir comprovante e confirmar retirada

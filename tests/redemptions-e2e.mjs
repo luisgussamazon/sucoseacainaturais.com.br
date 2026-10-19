@@ -115,6 +115,10 @@ export async function runRedemptionChecks({
       .locator(".product-card:visible")
       .getByRole("button", { name: "Resgatar", exact: true })
       .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Confirmar resgate", exact: true })
+      .click();
     await page.waitForURL((u) => u.pathname === "/resgates");
     await page
       .getByRole("heading", { name: "Meus resgates", exact: true })
@@ -492,13 +496,26 @@ export async function runRedemptionChecks({
       "Confirmação e primeira publicação concorrentes são únicas; autor exclui publicação ativa sem excluir pedido",
     );
     await buy();
-    await page.goto(base+"/resgates?status=RESERVED");
-    await page.locator("article:visible").filter({has:page.getByRole("heading",{name:product.name,exact:true})}).getByRole("button",{name:/Ver detalhes/}).click();
-    page.once("dialog",d=>d.accept());
-    await page.getByRole("dialog").getByRole("button",{name:"Cancelar resgate",exact:true}).click();
-    await page.getByRole("heading",{name:"Nenhum resgate encontrado",exact:true}).waitFor();
-    assert.equal(await page.getByRole("dialog").count(),0);
-    check("Cancelamento na lista filtrada fecha os detalhes sem deixar modal vazio ou bloquear a navegação");
+    await page.goto(base + "/resgates?status=RESERVED");
+    await page
+      .locator("article:visible")
+      .filter({
+        has: page.getByRole("heading", { name: product.name, exact: true }),
+      })
+      .getByRole("button", { name: /Ver detalhes/ })
+      .click();
+    page.once("dialog", (d) => d.accept());
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Cancelar resgate", exact: true })
+      .click();
+    await page
+      .getByRole("heading", { name: "Nenhum resgate encontrado", exact: true })
+      .waitFor();
+    assert.equal(await page.getByRole("dialog").count(), 0);
+    check(
+      "Cancelamento na lista filtrada fecha os detalhes sem deixar modal vazio ou bloquear a navegação",
+    );
     await db.pickupAttempt.upsert({
       where: { actorId: hr.id },
       create: { actorId: hr.id, attempts: 30 },
