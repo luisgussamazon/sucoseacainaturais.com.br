@@ -32,6 +32,9 @@ model User {
   assignedCommunityGrants CommunityGrant[]   @relation("CommunityAssigner")
   assignedPhotoMissions   PhotoMission[]     @relation("MissionReviewer")
   reviewedPhotoEvidence   PhotoEvidence[]    @relation("EvidenceReviewer")
+  mediaLikes              MediaLike[]
+  mediaComments           MediaComment[]     @relation("MediaCommentAuthor")
+  moderatedMediaComments  MediaComment[]     @relation("MediaCommentModerator")
   moderatedComments       CommunityComment[] @relation("CommentModerator")
   posts                   CommunityPost[]
   albums                  CommunityAlbum[]
@@ -130,12 +133,14 @@ model Mission {
 }
 
 model Completion {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  missionId String
-  mission   Mission  @relation(fields: [missionId], references: [id])
-  createdAt DateTime @default(now())
+  recognitionConsent Boolean        @default(false)
+  recognitionPost    CommunityPost?
+  id                 String         @id @default(cuid())
+  userId             String
+  user               User           @relation(fields: [userId], references: [id])
+  missionId          String
+  mission            Mission        @relation(fields: [missionId], references: [id])
+  createdAt          DateTime       @default(now())
 
   @@unique([userId, missionId])
 }
@@ -179,72 +184,87 @@ model CommunityGrant {
   publish    Boolean  @default(false)
   review     Boolean  @default(false)
   moderate   Boolean  @default(false)
-  leadership Boolean  @default(false)
+  leadership Boolean  @default(false) // Legacy only; never used for authorization.
+  photos     Boolean  @default(false)
+  albums     Boolean  @default(false)
+  events     Boolean  @default(false)
+  missions   Boolean  @default(false)
+  recognize  Boolean  @default(false)
   assigner   User     @relation("CommunityAssigner", fields: [assignedBy], references: [id], onDelete: Restrict)
   assignedBy String
   updatedAt  DateTime @updatedAt
 }
 
 model CommunityEvent {
-  id          String              @id @default(cuid())
-  title       String
-  description String
-  location    String
-  startsAt    DateTime
-  endsAt      DateTime
-  status      PublicationStatus   @default(DRAFT)
-  visibility  CommunityVisibility @default(INTERNAL)
-  authorId    String
-  author      User                @relation(fields: [authorId], references: [id])
-  posts       CommunityPost[]
-  albums      CommunityAlbum[]
-  createdAt   DateTime            @default(now())
+  imageAuthorization Boolean?
+  restrictedChecked  Boolean?
+  media              CommunityMedia[]
+  id                 String              @id @default(cuid())
+  title              String
+  description        String
+  location           String
+  startsAt           DateTime
+  endsAt             DateTime
+  status             PublicationStatus   @default(DRAFT)
+  visibility         CommunityVisibility @default(INTERNAL)
+  authorId           String
+  author             User                @relation(fields: [authorId], references: [id])
+  posts              CommunityPost[]
+  albums             CommunityAlbum[]
+  createdAt          DateTime            @default(now())
 
   @@index([status, startsAt])
 }
 
 model CommunityAlbum {
-  id          String              @id @default(cuid())
-  title       String
-  description String
-  eventDate   DateTime
-  status      PublicationStatus   @default(DRAFT)
-  visibility  CommunityVisibility @default(INTERNAL)
-  authorId    String
-  author      User                @relation(fields: [authorId], references: [id])
-  eventId     String?
-  event       CommunityEvent?     @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  media       CommunityMedia[]
-  posts       CommunityPost[]
-  createdAt   DateTime            @default(now())
+  category           String              @default("Eventos")
+  imageAuthorization Boolean?
+  restrictedChecked  Boolean?
+  thread             CommunityThread?
+  id                 String              @id @default(cuid())
+  title              String
+  description        String
+  eventDate          DateTime
+  status             PublicationStatus   @default(DRAFT)
+  visibility         CommunityVisibility @default(INTERNAL)
+  authorId           String
+  author             User                @relation(fields: [authorId], references: [id])
+  eventId            String?
+  event              CommunityEvent?     @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  media              CommunityMedia[]
+  posts              CommunityPost[]
+  createdAt          DateTime            @default(now())
 
   @@index([status, eventDate])
 }
 
 model CommunityPost {
-  id                 String              @id @default(cuid())
-  title              String
-  description        String
-  category           String
-  status             PublicationStatus   @default(DRAFT)
-  visibility         CommunityVisibility @default(INTERNAL)
-  publishedAt        DateTime            @default(now())
-  pinned             Boolean             @default(false)
-  authorId           String
-  author             User                @relation(fields: [authorId], references: [id])
-  eventId            String?
-  event              CommunityEvent?     @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  albumId            String?
-  album              CommunityAlbum?     @relation(fields: [albumId], references: [id], onDelete: SetNull)
-  evidenceId         String?             @unique
-  evidence           PhotoEvidence?      @relation(fields: [evidenceId], references: [id])
-  imageAuthorization Boolean             @default(false)
-  restrictedChecked  Boolean             @default(false)
-  media              CommunityMedia[]
-  likes              CommunityLike[]
-  comments           CommunityComment[]
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  completionId          String?             @unique
+  completion            Completion?         @relation(fields: [completionId], references: [id], onDelete: Restrict)
+  recognitionIdentified Boolean             @default(false)
+  id                    String              @id @default(cuid())
+  title                 String
+  description           String
+  category              String
+  status                PublicationStatus   @default(DRAFT)
+  visibility            CommunityVisibility @default(INTERNAL)
+  publishedAt           DateTime            @default(now())
+  pinned                Boolean             @default(false)
+  authorId              String
+  author                User                @relation(fields: [authorId], references: [id])
+  eventId               String?
+  event                 CommunityEvent?     @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  albumId               String?
+  album                 CommunityAlbum?     @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  evidenceId            String?             @unique
+  evidence              PhotoEvidence?      @relation(fields: [evidenceId], references: [id])
+  imageAuthorization    Boolean             @default(false)
+  restrictedChecked     Boolean             @default(false)
+  media                 CommunityMedia[]
+  likes                 CommunityLike[]
+  comments              CommunityComment[]
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
 
   @@index([status, pinned, publishedAt])
 }
@@ -260,6 +280,8 @@ model CommunityLike {
 }
 
 model CommunityComment {
+  requestId        String?       @unique
+  deletedAt        DateTime?
   id               String        @id @default(cuid())
   postId           String
   post             CommunityPost @relation(fields: [postId], references: [id])
@@ -330,28 +352,71 @@ model EvidenceReview {
 
 // Private persistent media: never served from /public or a public bucket.
 model CommunityMedia {
-  attempt        Int             @default(1)
-  id             String          @id @default(uuid())
+  position       Int              @default(0)
+  eventId        String?
+  event          CommunityEvent?  @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  thread         CommunityThread?
+  attempt        Int              @default(1)
+  id             String           @id @default(uuid())
   ownerId        String
-  owner          User            @relation(fields: [ownerId], references: [id])
+  owner          User             @relation(fields: [ownerId], references: [id])
   bytes          Bytes
   width          Int
   height         Int
-  mime           String          @default("image/webp")
-  cover          Boolean         @default(false)
+  mime           String           @default("image/webp")
+  cover          Boolean          @default(false)
   expiresAt      DateTime
-  createdAt      DateTime        @default(now())
+  createdAt      DateTime         @default(now())
   postId         String?
-  post           CommunityPost?  @relation(fields: [postId], references: [id], onDelete: Restrict)
+  post           CommunityPost?   @relation(fields: [postId], references: [id], onDelete: Restrict)
   albumId        String?
-  album          CommunityAlbum? @relation(fields: [albumId], references: [id], onDelete: Restrict)
+  album          CommunityAlbum?  @relation(fields: [albumId], references: [id], onDelete: Restrict)
   photoMissionId String?
-  photoMission   PhotoMission?   @relation(fields: [photoMissionId], references: [id], onDelete: Restrict)
+  photoMission   PhotoMission?    @relation(fields: [photoMissionId], references: [id], onDelete: Restrict)
   evidenceId     String?
-  evidence       PhotoEvidence?  @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
+  evidence       PhotoEvidence?   @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
 
   @@index([expiresAt])
   @@index([postId])
   @@index([albumId])
   @@index([evidenceId])
+}
+
+model CommunityThread {
+  id       String          @id @default(uuid())
+  albumId  String?         @unique
+  album    CommunityAlbum? @relation(fields: [albumId], references: [id], onDelete: Restrict)
+  mediaId  String?         @unique
+  media    CommunityMedia? @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  likes    MediaLike[]
+  comments MediaComment[]
+}
+
+model MediaLike {
+  threadId  String
+  thread    CommunityThread @relation(fields: [threadId], references: [id], onDelete: Restrict)
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt DateTime        @default(now())
+
+  @@id([threadId, userId])
+}
+
+model MediaComment {
+  id               String          @id @default(cuid())
+  requestId        String?         @unique
+  threadId         String
+  thread           CommunityThread @relation(fields: [threadId], references: [id], onDelete: Restrict)
+  userId           String
+  user             User            @relation("MediaCommentAuthor", fields: [userId], references: [id], onDelete: Restrict)
+  text             String
+  hidden           Boolean         @default(false)
+  deletedAt        DateTime?
+  moderatedBy      String?
+  moderator        User?           @relation("MediaCommentModerator", fields: [moderatedBy], references: [id], onDelete: Restrict)
+  moderationReason String?
+  createdAt        DateTime        @default(now())
+
+  @@index([threadId, hidden, createdAt])
+  @@index([userId, createdAt])
 }

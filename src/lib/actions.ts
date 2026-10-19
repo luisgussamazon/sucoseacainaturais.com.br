@@ -1,4 +1,5 @@
 "use server";
+import { demand } from "./community";
 import { randomBytes } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
@@ -271,7 +272,12 @@ export async function createBatch(f: FormData) {
   revalidatePath("/", "layout");
 }
 export async function createMission(f: FormData) {
-  const actor = await requireRole(["HR", "ADMIN"]);
+  const session = await requireUser();
+  const actor = await db.user.findUniqueOrThrow({
+    where: { id: session.id },
+    include: { communityGrant: true },
+  });
+  demand(actor, "missions");
   const title = z.string().min(3).max(100).parse(str(f, "title"));
   const description = z.string().min(5).max(1000).parse(str(f, "description"));
   const question = z.string().min(5).max(300).parse(str(f, "question"));
@@ -421,7 +427,12 @@ export async function updateProduct(f: FormData) {
   revalidatePath("/", "layout");
 }
 export async function closeMission(f: FormData) {
-  const actor = await requireRole(["HR", "ADMIN"]);
+  const session = await requireUser();
+  const actor = await db.user.findUniqueOrThrow({
+    where: { id: session.id },
+    include: { communityGrant: true },
+  });
+  demand(actor, "missions");
   const id = str(f, "missionId");
   await transaction(async (tx) => {
     await tx.mission.update({ where: { id }, data: { active: false } });

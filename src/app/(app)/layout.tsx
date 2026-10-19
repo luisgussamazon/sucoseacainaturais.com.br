@@ -15,7 +15,7 @@ export default async function AppLayout({
 }) {
   const user = await communityActor();
   const r = rights(user);
-  const communityAccess = r.publish || r.review || r.moderate || r.manage;
+  const communityAccess = r.management;
   return (
     <div className="app-shell">
       <aside className="sidebar">

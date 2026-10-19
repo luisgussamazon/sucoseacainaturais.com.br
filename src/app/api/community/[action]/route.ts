@@ -1,3 +1,5 @@
+import { socialMutation } from "@/lib/community-social";
+import { permissions, missionCategories } from "@/lib/community-options";
 import { currentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -62,6 +64,7 @@ export async function POST(
       headers: { "content-type": request.headers.get("content-type") ?? "" },
     }).formData();
     let message = "Alteração salva.";
+    let contentId: string | undefined;
     if (
       ["post", "album", "photo-mission", "submit"].includes(action) &&
       (await db.communityMedia.count({
@@ -84,17 +87,13 @@ export async function POST(
         publish: flag(f, "publish"),
         review: flag(f, "review"),
         moderate: flag(f, "moderate"),
-        leadership: flag(f, "leadership"),
+        photos: flag(f, "photos"),
+        albums: flag(f, "albums"),
+        events: flag(f, "events"),
+        missions: flag(f, "missions"),
+        recognize: flag(f, "recognize"),
         assignedBy: u.id,
       };
-      if (
-        target.role === "EMPLOYEE" &&
-        !data.leadership &&
-        (data.publish || data.review || data.moderate)
-      )
-        throw new CommunityError(
-          "Associe o colaborador à liderança antes de conceder permissões de gestão.",
-        );
       await serial(async (tx) => {
         await tx.communityGrant.upsert({
           where: { userId },
@@ -109,12 +108,29 @@ export async function POST(
         );
       });
     } else if (action === "post" || action === "album" || action === "event") {
-      demand(u, "publish");
       const id = optional(f, "id");
+      const currentPost =
+        action === "post" && id
+          ? await db.communityPost.findUniqueOrThrow({ where: { id } })
+          : null;
+      demand(
+        u,
+        action === "post"
+          ? optional(f, "completionId") ||
+            optional(f, "evidenceId") ||
+            currentPost?.completionId ||
+            currentPost?.evidenceId
+            ? "recognize"
+            : "publish"
+          : action === "album"
+            ? "albums"
+            : "events",
+      );
       const title = text(f, "title", 3, 150),
         description = text(f, "description", 5, 5000);
       const state = publication(f);
-      const photos = action === "event" ? [] : await imageFiles(f);
+      const photos = await imageFiles(f);
+      if (photos.length) demand(u, "photos");
       if (
         photos.length &&
         (!flag(f, "imageAuthorization") || !flag(f, "restrictedChecked"))
@@ -127,7 +143,82 @@ export async function POST(
           const existing = id
             ? await tx.communityPost.findUniqueOrThrow({ where: { id } })
             : null;
-          const evidenceId = existing?.evidenceId ?? optional(f, "evidenceId");
+          let evidenceId = existing?.evidenceId ?? optional(f, "evidenceId");
+          let completionId =
+            existing?.completionId ?? optional(f, "completionId");
+          if (evidenceId && !completionId) {
+            const e = await tx.photoEvidence.findUniqueOrThrow({
+              where: { id: evidenceId },
+              include: { photoMission: true },
+            });
+            const c = await tx.completion.findUnique({
+              where: {
+                userId_missionId: {
+                  userId: e.userId,
+                  missionId: e.photoMission.missionId,
+                },
+              },
+            });
+            if (!c)
+              throw new CommunityError("Conquista sem conclusão registrada.");
+            completionId = c.id;
+          }
+          let identified = false;
+          if (completionId) {
+            demand(u, "recognize");
+            const c = await tx.completion.findUniqueOrThrow({
+              where: { id: completionId },
+              include: { mission: { include: { photoConfig: true } } },
+            });
+            identified = flag(f, "identify");
+            if (identified && !c.recognitionConsent)
+              throw new CommunityError(
+                "A divulgação da identificação exige consentimento do associado.",
+              );
+            if (!flag(f, "recognitionAuthorization"))
+              throw new CommunityError(
+                "Confirme a publicação administrativa do reconhecimento.",
+              );
+            if (
+              !id &&
+              (await tx.communityPost.count({
+                where: {
+                  OR: [
+                    { completionId },
+                    {
+                      evidence: {
+                        userId: c.userId,
+                        photoMission: { missionId: c.missionId },
+                      },
+                    },
+                  ],
+                },
+              }))
+            )
+              throw new CommunityError(
+                "Esta conquista já possui publicação. Edite o registro existente.",
+              );
+            if (c.mission.photoConfig) {
+              const e = await tx.photoEvidence.findUnique({
+                where: {
+                  photoMissionId_userId: {
+                    photoMissionId: c.mission.photoConfig.id,
+                    userId: c.userId,
+                  },
+                },
+              });
+              if (!e || e.status !== "APPROVED")
+                throw new CommunityError("A evidência ainda não foi aprovada.");
+              if (flag(f, "includePhotos")) {
+                if (!e.shareConsent)
+                  throw new CommunityError(
+                    "Sem consentimento para divulgação das imagens.",
+                  );
+                evidenceId = e.id;
+              } else if (!id) evidenceId = null;
+            }
+          }
+
           let highlightPhotos: typeof photos = [];
           if (evidenceId) {
             const e = await tx.photoEvidence.findUniqueOrThrow({
@@ -147,7 +238,8 @@ export async function POST(
               ? []
               : e.media
                   .filter((m) => m.attempt === e.attempts)
-                  .map((m) => ({
+                  .map((m, index) => ({
+                    position: index,
                     bytes: m.bytes,
                     width: m.width,
                     height: m.height,
@@ -167,16 +259,20 @@ export async function POST(
             category: z.enum(categories).parse(f.get("category")),
             publishedAt: dateValue(f, "publishedAt"),
             pinned: flag(f, "pinned"),
+            recognitionIdentified: identified,
             albumId,
             eventId,
             imageAuthorization: flag(f, "imageAuthorization"),
             restrictedChecked: flag(f, "restrictedChecked"),
           };
+          if (f.get("status") === "SCHEDULED" && data.publishedAt <= new Date())
+            throw new CommunityError("Para agendar, escolha uma data futura.");
           const p = id
             ? await tx.communityPost.update({ where: { id }, data })
             : await tx.communityPost.create({
-                data: { ...data, authorId: u.id, evidenceId },
+                data: { ...data, authorId: u.id, evidenceId, completionId },
               });
+          contentId = p.id;
           if (
             photos.length +
               highlightPhotos.length +
@@ -193,6 +289,7 @@ export async function POST(
           });
           const coverId = optional(f, "coverId");
           if (coverId) {
+            demand(u, "photos");
             const cover = await tx.communityMedia.findFirst({
               where: { id: coverId, postId: p.id },
             });
@@ -213,6 +310,9 @@ export async function POST(
             description,
             ...state,
             eventDate: dateValue(f, "eventDate"),
+            category: optional(f, "category") ?? "Eventos",
+            imageAuthorization: flag(f, "imageAuthorization"),
+            restrictedChecked: flag(f, "restrictedChecked"),
             eventId: optional(f, "eventId"),
           };
           const a = id
@@ -220,6 +320,7 @@ export async function POST(
             : await tx.communityAlbum.create({
                 data: { ...data, authorId: u.id },
               });
+          contentId = a.id;
           if (
             photos.length +
               (await tx.communityMedia.count({ where: { albumId: a.id } })) >
@@ -231,6 +332,7 @@ export async function POST(
           });
           const coverId = optional(f, "coverId");
           if (coverId) {
+            demand(u, "photos");
             const cover = await tx.communityMedia.findFirst({
               where: { id: coverId, albumId: a.id },
             });
@@ -255,6 +357,8 @@ export async function POST(
             description,
             ...state,
             location: text(f, "location", 2, 200),
+            imageAuthorization: flag(f, "imageAuthorization"),
+            restrictedChecked: flag(f, "restrictedChecked"),
             startsAt,
             endsAt,
           };
@@ -263,69 +367,45 @@ export async function POST(
             : await tx.communityEvent.create({
                 data: { ...data, authorId: u.id },
               });
+          if (
+            photos.length +
+              (await tx.communityMedia.count({ where: { eventId: e.id } })) >
+            8
+          )
+            throw new CommunityError("Um evento pode ter até 8 fotos.");
+          await tx.communityMedia.createMany({
+            data: photos.map((m) => ({ ...m, ownerId: u.id, eventId: e.id })),
+          });
+          const eventCover = optional(f, "coverId");
+          if (eventCover) {
+            demand(u, "photos");
+            if (
+              !(await tx.communityMedia.findFirst({
+                where: { id: eventCover, eventId: e.id },
+              }))
+            )
+              throw new CommunityError("Capa inválida.");
+            await tx.communityMedia.updateMany({
+              where: { eventId: e.id },
+              data: { cover: false },
+            });
+            await tx.communityMedia.update({
+              where: { id: eventCover },
+              data: { cover: true },
+            });
+          }
+          contentId = e.id;
           await audit(tx, u, "COMMUNITY_EVENT", e.id);
         }
       });
       message =
         "Conteúdo salvo. Rascunhos e arquivos permanecem fora do mural.";
-    } else if (action === "like") {
-      const postId = text(f, "postId");
-      await serial(async (tx) => {
-        await loadPost(postId, u, tx);
-        if (flag(f, "liked"))
-          await tx.communityLike.upsert({
-            where: { postId_userId: { postId, userId: u.id } },
-            create: { postId, userId: u.id },
-            update: {},
-          });
-        else
-          await tx.communityLike.deleteMany({
-            where: { postId, userId: u.id },
-          });
-      });
-      message = "Interação atualizada.";
-    } else if (action === "comment") {
-      const postId = text(f, "postId"),
-        body = text(f, "text", 1, 1000);
-      await serial(async (tx) => {
-        await loadPost(postId, u, tx);
-        const recent = await tx.communityComment.count({
-          where: {
-            userId: u.id,
-            createdAt: { gt: new Date(Date.now() - 60000) },
-          },
-        });
-        if (recent >= 5)
-          throw new CommunityError(
-            "Aguarde um minuto antes de comentar novamente.",
-          );
-        await tx.communityComment.create({
-          data: { postId, userId: u.id, text: body },
-        });
-      });
-      message = "Comentário enviado.";
-    } else if (action === "moderate") {
-      demand(u, "moderate");
-      const id = text(f, "id"),
-        reason = text(f, "reason", 5, 300);
-      await serial(async (tx) => {
-        await tx.communityComment.update({
-          where: { id },
-          data: {
-            hidden: flag(f, "hidden"),
-            moderatedBy: u.id,
-            moderationReason: reason,
-          },
-        });
-        await audit(
-          tx,
-          u,
-          "MODERATE_COMMENT",
-          JSON.stringify({ id, reason, hidden: flag(f, "hidden") }),
-        );
-      });
+    } else if (
+      ["like", "comment", "delete-comment", "moderate"].includes(action)
+    ) {
+      message = await socialMutation(action, f, u);
     } else if (action === "photo-mission") {
-      demand(u, "publish");
+      demand(u, "missions");
       const title = text(f, "title", 3, 100),
         description = text(f, "description", 5, 1000),
         reward = positive(f, "reward"),
@@ -333,6 +413,7 @@ export async function POST(
         startsAt = dateValue(f, "startsAt");
       if (endsAt <= startsAt) throw new CommunityError("Prazo inválido.");
       const photos = await imageFiles(f, 1);
+      if (photos.length) demand(u, "photos");
       if (photos.length && !flag(f, "imageAuthorization"))
         throw new CommunityError("Confirme a autorização da capa.");
       const reviewerId = optional(f, "reviewerId");
@@ -406,7 +487,7 @@ export async function POST(
         await audit(tx, u, "PHOTO_MISSION", pm.id);
       });
     } else if (action === "close-photo-mission") {
-      demand(u, "publish");
+      demand(u, "missions");
       const id = text(f, "id");
       await serial(async (tx) => {
         const pm = await tx.photoMission.update({
@@ -419,6 +500,131 @@ export async function POST(
         });
         await audit(tx, u, "CLOSE_PHOTO_MISSION", id);
       });
+    } else if (action === "quiz-mission") {
+      demand(u, "missions");
+      const title = text(f, "title", 3, 100),
+        description = text(f, "description", 5, 1000),
+        reward = positive(f, "reward"),
+        endsAt = dateValue(f, "endsAt"),
+        question = text(f, "question", 5, 300),
+        options = [
+          text(f, "option0", 1, 200),
+          text(f, "option1", 1, 200),
+          text(f, "option2", 1, 200),
+        ],
+        answer = z.coerce.number().int().min(0).max(2).parse(f.get("answer"));
+      if (endsAt <= new Date())
+        throw new CommunityError("Defina um encerramento futuro.");
+      const m = await serial(async (tx) => {
+        const m = await tx.mission.create({
+          data: {
+            title,
+            description,
+            reward,
+            endsAt,
+            question,
+            options,
+            answer,
+            active: f.get("status") === "PUBLISHED",
+          },
+        });
+        await audit(tx, u, "CREATE_CAMPAIGN", m.id);
+        return m;
+      });
+      contentId = m.id;
+    } else if (action === "consent-recognition") {
+      const id = text(f, "id");
+      await serial(async (tx) => {
+        const c = await tx.completion.findUniqueOrThrow({ where: { id } });
+        if (c.userId !== u.id)
+          throw new CommunityError("Sem acesso a esta conquista.", 403);
+        await tx.completion.update({
+          where: { id },
+          data: { recognitionConsent: flag(f, "consent") },
+        });
+        await audit(
+          tx,
+          u,
+          "RECOGNITION_CONSENT",
+          JSON.stringify({ id, consent: flag(f, "consent") }),
+        );
+      });
+      message = "Autorização de identificação atualizada.";
+    } else if (action === "append-photos") {
+      demand(u, "photos");
+      const id = text(f, "targetId"),
+        kind = z.enum(["POST", "ALBUM", "EVENT"]).parse(f.get("kind")),
+        photos = await imageFiles(f);
+      if (!flag(f, "imageAuthorization") || !flag(f, "restrictedChecked"))
+        throw new CommunityError(
+          "Confirme a autorização e revisão de todas as imagens do conteúdo.",
+        );
+      await serial(async (tx) => {
+        const context =
+          kind === "POST"
+            ? { postId: id }
+            : kind === "ALBUM"
+              ? { albumId: id }
+              : { eventId: id };
+        const target =
+          kind === "POST"
+            ? await tx.communityPost.findUniqueOrThrow({ where: { id } })
+            : kind === "ALBUM"
+              ? await tx.communityAlbum.findUniqueOrThrow({ where: { id } })
+              : await tx.communityEvent.findUniqueOrThrow({ where: { id } });
+        if (target.authorId !== u.id && target.status !== "PUBLISHED")
+          throw new CommunityError(
+            "Rascunhos de outros autores permanecem privados.",
+            403,
+          );
+        const count = await tx.communityMedia.count({ where: context });
+        if (count + photos.length > 8)
+          throw new CommunityError("O limite é de 8 fotos por conteúdo.");
+        const coverId = optional(f, "coverId");
+        if (photos.some((m) => m.cover) || coverId)
+          await tx.communityMedia.updateMany({
+            where: context,
+            data: { cover: false },
+          });
+        await tx.communityMedia.createMany({
+          data: photos.map((m, i) => ({
+            ...m,
+            position: count + i,
+            ownerId: u.id,
+            ...context,
+          })),
+        });
+        if (coverId) {
+          if (
+            !(await tx.communityMedia.findFirst({
+              where: { id: coverId, ...context },
+            }))
+          )
+            throw new CommunityError("Capa inválida.");
+          await tx.communityMedia.update({
+            where: { id: coverId },
+            data: { cover: true },
+          });
+        }
+        const authorization = {
+          imageAuthorization: true,
+          restrictedChecked: true,
+        };
+        if (kind === "POST")
+          await tx.communityPost.update({ where: { id }, data: authorization });
+        else if (kind === "ALBUM")
+          await tx.communityAlbum.update({
+            where: { id },
+            data: authorization,
+          });
+        else
+          await tx.communityEvent.update({
+            where: { id },
+            data: authorization,
+          });
+        await audit(tx, u, "APPEND_AUTHORIZED_PHOTOS", kind + ":" + id);
+      });
+      message = "Fotos e capa atualizadas.";
     } else if (action === "submit") {
       const photoMissionId = text(f, "photoMissionId");
       const config = await db.photoMission.findUniqueOrThrow({
@@ -586,7 +792,7 @@ export async function POST(
         "Somente imagens com retenção expirada foram removidas. Registros e histórico preservados.";
     } else throw new CommunityError("Ação inexistente.", 404);
     revalidatePath("/", "layout");
-    return Response.json({ message }, { headers });
+    return Response.json({ message, contentId }, { headers });
   } catch (e) {
     if (e instanceof CommunityError)
       return Response.json({ error: e.message }, { status: e.status, headers });

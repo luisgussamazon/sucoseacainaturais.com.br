@@ -3,7 +3,11 @@ import { requireUser } from "@/lib/auth";
 import { completeMission } from "@/lib/actions";
 import { Empty, PageTitle, date, Flash } from "@/components/ui";
 import { Sparkles } from "lucide-react";
-import { PhotoMissions, communityActor } from "@/components/community-server";
+import {
+  MyRecognitionConsent,
+  PhotoMissions,
+  communityActor,
+} from "@/components/community-server";
 export default async function Missions({
   searchParams,
 }: {
@@ -25,6 +29,7 @@ export default async function Missions({
       />
       <Flash {...params} />
       <PhotoMissions user={u} />
+      <MyRecognitionConsent user={u} />
       {missions.length ? (
         <div className="mission-grid">
           {missions.map((m) => (

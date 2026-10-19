@@ -128,12 +128,12 @@ export default async function Evidence({
             </div>
           )}
           {e.status === "APPROVED" &&
-            r.publish &&
+            r.recognize &&
             e.shareConsent &&
             !e.post && (
               <Link
                 className="button secondary"
-                href={"/comunidade?kind=post&evidence=" + e.id + "#editor"}
+                href={"/comunidade/conquistas"}
               >
                 Destacar esta conquista no mural
               </Link>

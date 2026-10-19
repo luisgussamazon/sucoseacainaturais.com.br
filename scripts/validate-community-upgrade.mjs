@@ -6,27 +6,24 @@ import { mkdirSync, copyFileSync, readdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import assert from "node:assert/strict";
 import { PrismaClient } from "@prisma/client";
-const qa = createRequire(resolve(".setup/qa/package.json"));
-const { default: EmbeddedPostgres } = await import(
-  pathToFileURL(qa.resolve("embedded-postgres")).href
-);
-const password = randomBytes(24).toString("hex"),
-  folder = resolve(".setup", "upgrade-" + Date.now());
+const qa = createRequire(resolve(".setup/qa/package.json")),
+  { default: EmbeddedPostgres } = await import(
+    pathToFileURL(qa.resolve("embedded-postgres")).href
+  ),
+  password = randomBytes(24).toString("hex"),
+  folder = resolve(".setup", "upgrade-improvements-" + Date.now()),
+  migration = "20261019190000_community_individual_access_and_interactions";
 mkdirSync(folder, { recursive: true });
-const baseline = spawnSync(
+const old = spawnSync(
   "git",
-  ["show", "bf571fca32bb05a6389e4c14ef97e57fc77b18a8:prisma/schema.prisma"],
+  ["show", "0355b011bc96e9d4bbc6a6fd99ead219182f0c97:prisma/schema.prisma"],
   { encoding: "utf8", windowsHide: true },
 );
-assert.equal(
-  baseline.status,
-  0,
-  "Full repository history required for upgrade validation",
-);
-writeFileSync(folder + "/schema.prisma", baseline.stdout);
+assert.equal(old.status, 0);
+writeFileSync(folder + "/schema.prisma", old.stdout);
 mkdirSync(folder + "/migrations", { recursive: true });
 for (const name of readdirSync("prisma/migrations")) {
-  if (name === "20261019150000_community_photo_missions") continue;
+  if (name === migration) continue;
   if (name.endsWith(".toml"))
     copyFileSync("prisma/migrations/" + name, folder + "/migrations/" + name);
   else {
@@ -38,17 +35,17 @@ for (const name of readdirSync("prisma/migrations")) {
   }
 }
 const pg = new EmbeddedPostgres({
-  databaseDir: folder + "/data",
-  port: 55440,
-  user: "upgrade_qa",
-  password,
-  persistent: true,
-  authMethod: "scram-sha-256",
-  postgresFlags: ["-h", "127.0.0.1"],
-  onLog: () => {},
-  onError: () => {},
-});
-const url = `postgresql://upgrade_qa:${password}@127.0.0.1:55440/upgrade_qa?schema=public`,
+    databaseDir: folder + "/data",
+    port: 55440,
+    user: "upgrade_qa",
+    password,
+    persistent: true,
+    authMethod: "scram-sha-256",
+    postgresFlags: ["-h", "127.0.0.1"],
+    onLog: () => {},
+    onError: () => {},
+  }),
+  url = `postgresql://upgrade_qa:${password}@127.0.0.1:55440/upgrade_qa?schema=public`,
   env = { ...process.env, DATABASE_URL: url };
 let db;
 function migrate(schema) {
@@ -72,25 +69,33 @@ try {
   migrate(folder + "/schema.prisma");
   db = new PrismaClient({ datasources: { db: { url } } });
   const u = await db.user.create({
-    data: {
-      name: "Registro existente QA",
-      email: "existing@qa.invalid",
-      passwordHash: "not-a-login",
-      balance: 20,
-    },
+      data: {
+        name: "Registro antigo QA",
+        email: "upgrade@qa.invalid",
+        passwordHash: "not-a-login",
+        role: "HR",
+        balance: 20,
+      },
+    }),
+    m = await db.mission.create({
+      data: {
+        title: "Quiz anterior QA",
+        description: "Conquista histórica",
+        reward: 25,
+        question: "Questão anterior",
+        options: ["A", "B", "C"],
+        answer: 0,
+        endsAt: new Date(Date.now() + 86400000),
+      },
+    });
+  await db.$executeRaw`INSERT INTO "Completion" (id,"userId","missionId","createdAt") VALUES ('old-completion',${u.id},${m.id},now())`;
+  await db.$executeRaw`INSERT INTO "CommunityGrant" ("userId",publish,review,moderate,leadership,"assignedBy","updatedAt") VALUES (${u.id},true,true,false,false,${u.id},now())`;
+  await db.$executeRaw`INSERT INTO "CommunityAlbum" (id,title,description,"eventDate",status,visibility,"authorId","createdAt") VALUES ('old-album','Álbum anterior','Fotos previamente autorizadas',now(),'PUBLISHED','INTERNAL',${u.id},now())`;
+  await db.audit.create({
+    data: { actorId: u.id, action: "COMMUNITY_ALBUM", details: "old-album" },
   });
-  const m = await db.mission.create({
-    data: {
-      title: "Quiz anterior",
-      description: "Registro anterior à migração",
-      reward: 25,
-      question: "Questão anterior",
-      options: ["A", "B", "C"],
-      answer: 0,
-      endsAt: new Date(Date.now() + 86400000),
-    },
-  });
-  await db.completion.create({ data: { userId: u.id, missionId: m.id } });
+  await db.$executeRaw`INSERT INTO "CommunityPost" (id,title,description,category,status,visibility,"publishedAt",pinned,"authorId","imageAuthorization","restrictedChecked","createdAt","updatedAt") VALUES ('old-private-post','Restrito anterior','Não expor automaticamente','Comunicados','PUBLISHED','MANAGEMENT',now(),false,${u.id},false,false,now(),now())`;
+  await db.$executeRaw`INSERT INTO "CommunityComment" (id,"postId","userId",text,hidden,"createdAt") VALUES ('old-comment','old-private-post',${u.id},'Comentário antigo',false,now())`;
   await db.ledger.createMany({
     data: [
       { userId: u.id, amount: 25, description: "Crédito anterior" },
@@ -100,16 +105,16 @@ try {
   const p = await db.product.create({
       data: {
         name: "Produto anterior",
-        description: "Registro de teste de upgrade",
-        price: 5,
+        description: "Registro anterior",
         category: "Teste",
-        imageUrl: "https://example.invalid/product.png",
+        price: 5,
+        imageUrl: "https://example.invalid/p.png",
       },
     }),
     b = await db.batch.create({
       data: {
+        code: "OLD",
         productId: p.id,
-        code: "EXISTING",
         quantity: 4,
         expiresAt: new Date(Date.now() + 86400000),
       },
@@ -120,29 +125,56 @@ try {
   await db.allocation.create({
     data: { orderId: o.id, batchId: b.id, quantity: 1 },
   });
-  const models = [
-    "user",
-    "mission",
-    "completion",
-    "ledger",
-    "product",
-    "batch",
-    "order",
-    "allocation",
-  ];
-  const before = await Promise.all(
-    models.map((k) => db[k].findMany({ orderBy: { id: "asc" } })),
-  );
+  const before = await snapshot();
   migrate("prisma/schema.prisma");
-  const after = await Promise.all(
-    models.map((k) => db[k].findMany({ orderBy: { id: "asc" } })),
-  );
+  const after = await snapshot();
   assert.deepEqual(after, before);
-  assert.equal(await db.communityGrant.count(), 0);
-  assert.equal(await db.photoEvidence.count(), 0);
+  const g = await db.communityGrant.findUniqueOrThrow({
+    where: { userId: u.id },
+  });
+  for (const k of ["photos", "albums", "events", "missions", "recognize"])
+    assert.equal(g[k], false);
+  assert.equal(await db.communityThread.count(), 0);
   console.log(
-    "PASS upgrade incremental preserva integralmente usuários, saldo, extrato, quiz, conclusão, produto, lote, pedido e alocação; nenhuma permissão concedida.",
+    "PASS migração incremental preserva integralmente dados antigos, permissões originais, conteúdo restrito, comentários, saldo, extrato, quiz, produto, estoque e resgate; nenhuma nova permissão concedida.",
   );
+  async function snapshot() {
+    const records = [];
+    for (const [name, omit] of [
+      ["User", []],
+      ["Mission", []],
+      ["Completion", ["recognitionConsent"]],
+      ["Ledger", []],
+      ["Product", []],
+      ["Batch", []],
+      ["Order", []],
+      ["Allocation", []],
+      [
+        "CommunityGrant",
+        ["photos", "albums", "events", "missions", "recognize"],
+      ],
+      [
+        "CommunityAlbum",
+        ["category", "imageAuthorization", "restrictedChecked"],
+      ],
+      ["CommunityPost", ["completionId", "recognitionIdentified"]],
+      ["CommunityComment", ["requestId", "deletedAt"]],
+      ["Audit", []],
+    ]) {
+      const rows = await db.$queryRawUnsafe(
+        'SELECT to_jsonb(t) - $1::text[] AS row FROM "' +
+          name +
+          '" t ORDER BY 1::text',
+        omit,
+      );
+      records.push(
+        rows
+          .map((r) => r.row)
+          .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
+      );
+    }
+    return records;
+  }
 } catch (e) {
   console.error(e.message);
   process.exitCode = 1;

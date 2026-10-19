@@ -1,9 +1,14 @@
-﻿import { CommunityFeed, communityActor } from "@/components/community-server";
+import { CommunityFeed, communityActor } from "@/components/community-server";
 import { categories } from "@/lib/community";
 export default async function Mural({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; category?: string; q?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    category?: string;
+    q?: string;
+    post?: string;
+  }>;
 }) {
   const user = await communityActor();
   const p = await searchParams;
@@ -32,6 +37,7 @@ export default async function Mural({
       <CommunityFeed
         user={user}
         page={page}
+        postId={p.post}
         category={p.category}
         q={p.q?.slice(0, 100)}
       />

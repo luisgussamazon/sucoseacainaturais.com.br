@@ -5,10 +5,11 @@ let source = readFileSync("scripts/validate-e2e.mjs", "utf8").replaceAll(
   "\n",
 );
 source =
-  'import {runCommunityChecks} from "../tests/community-e2e.mjs";\n' + source;
+  'import {runCommunityChecks} from "../tests/community-e2e.mjs";\nimport {runImprovementChecks} from "../tests/community-improvements-e2e.mjs";\n' +
+  source;
 source = source.replace(
   '  writeFileSync(\n    ".setup/qa-results.json",',
-  '  await runCommunityChecks({db,browser,admin,employee,login,check});\n  writeFileSync(\n    ".setup/qa-results.json",',
+  '  await runCommunityChecks({db,browser,admin,employee,login,check});\n  await runImprovementChecks({db,browser,admin,employee,login,check});\n  writeFileSync(\n    ".setup/qa-results.json",',
 );
 source = source
   .replaceAll(

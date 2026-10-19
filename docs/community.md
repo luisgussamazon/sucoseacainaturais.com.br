@@ -1,5 +1,7 @@
 ﻿# Mural, Momentos VBJ2 e missões fotográficas
 
+> A implementação foi evoluída. Consulte [Correções e permissões individuais](community-improvements.md) para o funcionamento atual; os detalhes abaixo registram a primeira entrega.
+
 Módulo incremental da plataforma existente. Não altera sessões, perfis existentes, preços, FEFO, resgates ou concessões antigas. Não há dados demonstrativos nem permissões pré-concedidas em produção.
 
 ## Operação

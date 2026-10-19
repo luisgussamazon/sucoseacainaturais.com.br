@@ -3,8 +3,8 @@ import { PrismaClient } from "@prisma/client";
 const db = new PrismaClient();
 try {
   const migration =
-    await db.$queryRaw`SELECT migration_name FROM "_prisma_migrations" WHERE migration_name = '20261019150000_community_photo_missions' AND finished_at IS NOT NULL AND rolled_back_at IS NULL`;
-  if (migration.length !== 1)
+    await db.$queryRaw`SELECT migration_name FROM "_prisma_migrations" WHERE migration_name IN ('20261019150000_community_photo_missions','20261019190000_community_individual_access_and_interactions') AND finished_at IS NOT NULL AND rolled_back_at IS NULL`;
+  if (migration.length !== 2)
     throw new Error("Community migration not applied");
   const [
     users,
@@ -17,6 +17,8 @@ try {
     events,
     evidence,
     grants,
+    threads,
+    photoComments,
   ] = await Promise.all([
     db.user.count(),
     db.product.count(),
@@ -28,6 +30,8 @@ try {
     db.communityEvent.count(),
     db.photoEvidence.count(),
     db.communityGrant.count(),
+    db.communityThread.count(),
+    db.mediaComment.count(),
   ]);
   console.log(
     JSON.stringify({
@@ -44,6 +48,8 @@ try {
         events,
         evidence,
         grants,
+        threads,
+        photoComments,
       },
     }),
   );

@@ -329,3 +329,247 @@
     align-items: start;
   }
 }
+.community-main {
+  display: grid;
+  gap: 28px;
+  min-width: 0;
+  align-content: start;
+}
+.community-moments {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.latest-album .panel,
+.recent-photos {
+  padding: 24px;
+}
+.album-card h2 {
+  margin: 14px 0 8px;
+}
+.album-card p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.social-interactions {
+  border-top: 1px solid #e8edf2;
+  margin-top: 16px;
+  padding-top: 14px;
+  min-width: 0;
+}
+.social-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.social-button {
+  border: 1px solid #e3e8ee;
+  border-radius: 10px;
+  background: #fff9f0;
+  color: #854300;
+  padding: 10px 14px;
+  font: inherit;
+  cursor: pointer;
+  min-height: 44px;
+}
+.social-button[aria-pressed="true"] {
+  background: #fff0d7;
+  color: #a34c00;
+  border-color: #ffcc83;
+}
+.social-button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.social-interactions .community-comment p {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.social-interactions form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.social-interactions textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 90px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #dbe1e8;
+  font: inherit;
+  resize: vertical;
+}
+.photo-upload {
+  padding: 18px;
+  border: 2px dashed #dde5ec;
+  border-radius: 14px;
+  background: #fbfcfd;
+}
+.photo-upload.is-dragging {
+  background: #fff2df;
+  border-color: #ff9900;
+}
+.photo-upload-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.photo-picker {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  clip-path: inset(50%);
+  overflow: hidden;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap;
+}
+.selected-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 14px;
+}
+.selected-photo {
+  padding: 10px;
+  border: 1px solid #e0e6ed;
+  border-radius: 12px;
+  background: white;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.selected-photo > img {
+  width: 100%;
+  height: 130px;
+  object-fit: contain;
+  background: #f6f7f9;
+  border-radius: 8px;
+}
+.selected-photo > span {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.photo-cover,
+.photo-order-controls button {
+  padding: 8px;
+  border: 1px solid #dce4ec;
+  background: white;
+  border-radius: 7px;
+  cursor: pointer;
+  min-height: 36px;
+}
+.photo-cover.selected {
+  border-color: #ff9900;
+  background: #fff1dc;
+}
+.photo-order-controls {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.photo-order-controls button:disabled {
+  opacity: 0.4;
+}
+.community-form progress {
+  width: 100%;
+  height: 12px;
+  accent-color: #ff9900;
+}
+.community-form progress + span {
+  display: block;
+  font-size: 13px;
+  margin-top: 6px;
+}
+.recent-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.recent-photo-grid .gallery-cover {
+  aspect-ratio: 1.2;
+}
+.recent-photo-grid img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.community-evidence > small {
+  display: block;
+  margin-top: 12px;
+}
+.community-gallery dialog .social-interactions {
+  background: #fff;
+  padding: 16px;
+  border-radius: 12px;
+}
+.community-feed .community-post > h2 {
+  overflow-wrap: anywhere;
+}
+.home-title {
+  margin-top: 24px;
+}
+.community-layout {
+  grid-template-columns: minmax(0, 7fr) minmax(245px, 3fr);
+}
+@media (max-width: 768px) {
+  .community-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .latest-album .panel,
+  .recent-photos {
+    padding: 18px;
+  }
+  .selected-photos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .selected-photo {
+    padding: 8px;
+  }
+  .selected-photo > img {
+    height: 100px;
+  }
+  .photo-upload {
+    padding: 12px;
+  }
+  .photo-upload-actions > .button {
+    width: 100%;
+    justify-content: center;
+  }
+  .recent-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .social-actions {
+    gap: 8px;
+    font-size: 13px;
+  }
+  .social-button {
+    padding: 9px 12px;
+  }
+  .photo-order-controls button {
+    font-size: 12px;
+    padding: 7px;
+  }
+  .home-title h1 {
+    font-size: 23px;
+  }
+  .community-gallery dialog .social-interactions {
+    padding: 10px;
+  }
+}
+/* Reserve image space before lazy loading; contain preserves portrait and landscape photos. */
+.community-gallery > .gallery-cover {
+  aspect-ratio: 16/10;
+  max-height: 440px;
+  position: relative;
+}
+.community-gallery > .gallery-cover > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
+}

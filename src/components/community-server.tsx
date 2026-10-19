@@ -4,11 +4,17 @@ import { currentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import {
   publishedWhere,
+  mediaConsent,
   rights,
   photoGuidance,
   type Actor,
 } from "@/lib/community";
-import { CommunityForm, PhotoGallery, PhotoUpload } from "./community-client";
+import {
+  SocialInteractions,
+  CommunityForm,
+  PhotoGallery,
+  PhotoUpload,
+} from "./community-client";
 import { Empty, date } from "./ui";
 export async function communityActor() {
   const u = await currentUser();
@@ -21,18 +27,26 @@ export async function communityActor() {
 const photoSelect = () => ({
   where: { expiresAt: { gt: new Date() } },
   select: { id: true },
-  orderBy: [{ cover: "desc" as const }, { createdAt: "asc" as const }],
+  orderBy: [
+    { cover: "desc" as const },
+    { position: "asc" as const },
+    { createdAt: "asc" as const },
+  ],
 });
 export async function CommunityFeed({
   user,
   page = 1,
   category,
   q,
+  postId,
+  limit = 10,
 }: {
   user: Actor;
   page?: number;
   category?: string;
   q?: string;
+  postId?: string;
+  limit?: number;
 }) {
   const pageHref = (n: number) =>
     "/mural?" +
@@ -42,6 +56,7 @@ export async function CommunityFeed({
       ...(q ? { q } : {}),
     }).toString();
   const where = {
+    ...(postId ? { id: postId } : {}),
     ...publishedWhere(user),
     publishedAt: { lte: new Date() },
     ...(category ? { category } : {}),
@@ -57,19 +72,11 @@ export async function CommunityFeed({
   const posts = await db.communityPost.findMany({
     where,
     orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-    take: 10,
-    skip: (page - 1) * 10,
+    take: limit,
+    skip: (page - 1) * limit,
     include: {
       author: { select: { name: true } },
       media: photoSelect(),
-      _count: { select: { likes: true } },
-      likes: { where: { userId: user.id }, select: { userId: true } },
-      comments: {
-        where: { hidden: false },
-        take: 20,
-        orderBy: { createdAt: "desc" },
-        include: { user: { select: { name: true } } },
-      },
     },
   });
   return (
@@ -85,7 +92,7 @@ export async function CommunityFeed({
         />
       )}
       {posts.map((p) => (
-        <article className="panel community-post" key={p.id}>
+        <article className="panel community-post" key={p.id} id={p.id}>
           <div className="community-post-meta">
             <span className="badge">{p.category}</span>
             <small>
@@ -96,54 +103,24 @@ export async function CommunityFeed({
           <h2>{p.title}</h2>
           <small className="muted">Publicado por {p.author.name}</small>
           <p className="community-text">{p.description}</p>
-          <PhotoGallery photos={p.media} title={p.title} />
+          <PhotoGallery
+            photos={p.imageAuthorization && p.restrictedChecked ? p.media : []}
+            title={p.title}
+            interactive
+          />
           {p.albumId && (
             <Link href={"/momentos?album=" + p.albumId}>
               Ver álbum associado →
             </Link>
           )}
-          <div className="post-interactions">
-            <CommunityForm
-              action="like"
-              label={p.likes.length ? "Descurtir" : "Curtir"}
-            >
-              <input type="hidden" name="postId" value={p.id} />
-              <input
-                type="hidden"
-                name="liked"
-                value={p.likes.length ? "false" : "true"}
-              />
-            </CommunityForm>
-            <span>{p._count.likes} curtidas</span>
-          </div>
-          <details>
-            <summary>Comentários</summary>
-            {p.comments.length === 0 && (
-              <p className="muted">Seja a primeira pessoa a comentar.</p>
-            )}
-            {p.comments.map((c) => (
-              <div className="community-comment" key={c.id}>
-                <strong>{c.user.name}</strong>
-                <small>{date(c.createdAt)}</small>
-                <p>{c.text}</p>
-              </div>
-            ))}
-            {p.comments.length === 20 && (
-              <p className="muted">Exibindo os 20 comentários mais recentes.</p>
-            )}
-            <CommunityForm action="comment" label="Comentar" reset>
-              <input type="hidden" name="postId" value={p.id} />
-              <label className="field">
-                Seu comentário
-                <textarea name="text" required maxLength={1000} />
-              </label>
-            </CommunityForm>
-          </details>
+          <Link href={"/mural?post=" + p.id}>Abrir publicação completa →</Link>
+          <SocialInteractions kind="POST" targetId={p.id} />
         </article>
       ))}
       <div className="community-links">
+        <Link href="/mural">Ver histórico do mural →</Link>
         {page > 1 && <Link href={pageHref(page - 1)}>← Anteriores</Link>}
-        {posts.length === 10 && (
+        {posts.length === limit && (
           <Link href={pageHref(page + 1)}>Mais publicações →</Link>
         )}
       </div>
@@ -171,6 +148,7 @@ export async function CommunityAside({ user }: { user: Actor }) {
       where: { ...publishedWhere(user), endsAt: { gte: now } },
       orderBy: { startsAt: "asc" },
       take: 4,
+      include: { media: photoSelect() },
     }),
     db.communityPost.findMany({
       where: {
@@ -220,6 +198,13 @@ export async function CommunityAside({ user }: { user: Actor }) {
               {date(e.startsAt)} · {e.location}
             </span>
             <p>{e.description}</p>
+            <PhotoGallery
+              photos={
+                e.imageAuthorization && e.restrictedChecked ? e.media : []
+              }
+              title={e.title}
+              interactive
+            />
           </div>
         ))}
       </section>
@@ -251,10 +236,7 @@ export async function CommunityAside({ user }: { user: Actor }) {
           </Link>
         </div>
       </section>
-      {(rights(user).publish ||
-        rights(user).review ||
-        rights(user).moderate ||
-        rights(user).manage) && (
+      {rights(user).management && (
         <Link className="button secondary" href="/comunidade">
           Comunidade e Eventos
         </Link>
@@ -371,6 +353,157 @@ export async function PhotoMissions({ user }: { user: Actor }) {
           );
         })}
       </div>
+    </section>
+  );
+}
+
+export async function CommunityMoments({
+  user,
+  recent = false,
+  albumId,
+  page = 1,
+}: {
+  user: Actor;
+  recent?: boolean;
+  albumId?: string;
+  page?: number;
+}) {
+  const albums = await db.communityAlbum.findMany({
+    where: { ...publishedWhere(user), ...(albumId ? { id: albumId } : {}) },
+    orderBy: { eventDate: "desc" },
+    take: recent ? 1 : 12,
+    skip: recent ? 0 : (page - 1) * 12,
+    include: { media: photoSelect() },
+  });
+  const approvedAlbums = new Set(
+    (
+      await Promise.all(
+        albums.map(async (a) =>
+          (await mediaConsent(a, "ALBUM")) ? a.id : null,
+        ),
+      )
+    ).filter(Boolean),
+  );
+  const candidates = recent
+    ? await db.communityMedia.findMany({
+        where: {
+          album: { status: "PUBLISHED", visibility: "INTERNAL" },
+          expiresAt: { gt: new Date() },
+        },
+        select: {
+          id: true,
+          album: {
+            select: {
+              id: true,
+              imageAuthorization: true,
+              restrictedChecked: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 24,
+      })
+    : [];
+  const photos = (
+    await Promise.all(
+      candidates.map(async (m) =>
+        m.album && (await mediaConsent(m.album, "ALBUM")) ? { id: m.id } : null,
+      ),
+    )
+  )
+    .filter((m): m is { id: string } => m !== null)
+    .slice(0, 6);
+  return (
+    <section className="community-moments" aria-label="Momentos VBJ2">
+      <div className="section-heading">
+        <h2>Momentos VBJ2</h2>
+        <Link href="/momentos">Ver todos os álbuns →</Link>
+      </div>
+      {!albums.length && (
+        <Empty
+          title="Novos momentos estão por vir"
+          text="Os álbuns publicados e autorizados aparecerão aqui."
+        />
+      )}
+      <div className={recent ? "latest-album" : "community-albums"}>
+        {albums.map((a) => (
+          <article className="panel album-card" key={a.id}>
+            <PhotoGallery
+              photos={approvedAlbums.has(a.id) ? a.media : []}
+              title={a.title}
+              interactive
+            />
+            <span className="badge">{a.category}</span>
+            <h2>{a.title}</h2>
+            <small>
+              {date(a.eventDate)} ·{" "}
+              {approvedAlbums.has(a.id) ? a.media.length : 0} fotografias
+            </small>
+            <p>{a.description}</p>
+            <SocialInteractions kind="ALBUM" targetId={a.id} />
+          </article>
+        ))}
+      </div>
+      {recent && photos.length > 0 && (
+        <section className="panel recent-photos">
+          <h3>Fotografias recentes</h3>
+          <PhotoGallery
+            photos={photos}
+            title="Momentos da equipe"
+            interactive
+            grid
+          />
+        </section>
+      )}
+      {!recent && (
+        <div className="community-links">
+          {page > 1 && (
+            <Link href={"/momentos?page=" + (page - 1)}>Anteriores</Link>
+          )}
+          {albums.length === 12 && (
+            <Link href={"/momentos?page=" + (page + 1)}>Mais álbuns →</Link>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+export async function MyRecognitionConsent({ user }: { user: Actor }) {
+  const completions = await db.completion.findMany({
+    where: { userId: user.id },
+    include: { mission: { select: { title: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+  if (!completions.length) return null;
+  return (
+    <section className="panel community-evidence">
+      <h2>Minhas conquistas</h2>
+      <p>
+        A recompensa é independente da divulgação. Você pode autorizar a
+        identificação em um reconhecimento interno; fotos continuam exigindo
+        autorização própria.
+      </p>
+      {completions.map((c) => (
+        <details key={c.id}>
+          <summary>{c.mission.title}</summary>
+          <CommunityForm
+            action="consent-recognition"
+            label="Salvar autorização"
+          >
+            <input type="hidden" name="id" value={c.id} />
+            <label className="check">
+              <input
+                type="checkbox"
+                name="consent"
+                defaultChecked={c.recognitionConsent}
+              />
+              Autorizo o uso do meu nome de exibição neste reconhecimento
+              interno.
+            </label>
+          </CommunityForm>
+        </details>
+      ))}
     </section>
   );
 }

@@ -1,32 +1,19 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles, Leaf, Coins, ArrowUpRight } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+
 import { db } from "@/lib/db";
 import { Empty, number, SectionHeading, Stats, date } from "@/components/ui";
-import { ProductCard } from "@/components/product-card";
+
 import {
   CommunityFeed,
   CommunityAside,
+  CommunityMoments,
   communityActor,
 } from "@/components/community-server";
 export default async function Home() {
   const user = await communityActor();
   const now = new Date();
-  const [products, orders, rewards, missions, ledger] = await Promise.all([
-    db.product.findMany({
-      where: {
-        active: true,
-        batches: { some: { quantity: { gt: 0 }, expiresAt: { gt: now } } },
-      },
-      include: {
-        batches: {
-          where: { quantity: { gt: 0 }, expiresAt: { gt: now } },
-          orderBy: { expiresAt: "asc" },
-        },
-      },
-      take: 3,
-      orderBy: { name: "asc" },
-    }),
+  const [orders, rewards, missions, ledger] = await Promise.all([
     db.order.count({
       where: { userId: user.id, status: { not: "CANCELLED" } },
     }),
@@ -53,53 +40,6 @@ export default async function Home() {
   ]);
   return (
     <>
-      <div className="welcome-line">
-        <span>
-          <span className="live-dot" />
-          BOM TER VOCÊ POR AQUI
-        </span>
-        <span>
-          {new Intl.DateTimeFormat("pt-BR", {
-            dateStyle: "long",
-            timeZone: "America/Sao_Paulo",
-          }).format(now)}
-        </span>
-      </div>
-      <div className="home-title">
-        <h1>Bem-vindo ao SSD VBJ2!</h1>
-        <p>
-          Acompanhe nossas conquistas, participe das missões e faça parte das
-          ações da nossa equipe.
-        </p>
-      </div>
-      <Stats
-        items={[
-          {
-            label: "Seu saldo disponível",
-            value: number(user.balance),
-            detail: "Amazonitos para novas escolhas",
-          },
-          {
-            label: "Amazonitos conquistados",
-            value: number(rewards._sum.amount ?? 0),
-            detail: "Créditos recebidos na sua carteira",
-          },
-          {
-            label: "Seus resgates",
-            value: number(orders),
-            detail: "Produtos reservados ou retirados",
-          },
-          {
-            label: "Missões disponíveis",
-            value: number(missions),
-            detail: "Novas chances de conquistar",
-          },
-        ]}
-      />
-      <div className="community-layout">
-        <CommunityFeed user={user} />
-        <CommunityAside user={user} />
-      </div>
       <section className="hero">
         <div className="hero-copy">
           <div className="hero-tag">
@@ -140,26 +80,56 @@ export default async function Home() {
           </div>
         </div>
       </section>
-      <div className="section-intro">
-        <SectionHeading
-          title="Boas escolhas, por menos Amazonitos"
-          href="/loja"
-          label="Explorar produtos"
-        />
-        <p>Produtos próximos ao vencimento. Aproveite com consciência.</p>
+      <Stats
+        items={[
+          {
+            label: "Seu saldo disponível",
+            value: number(user.balance),
+            detail: "Amazonitos para novas escolhas",
+          },
+          {
+            label: "Amazonitos conquistados",
+            value: number(rewards._sum.amount ?? 0),
+            detail: "Créditos recebidos na sua carteira",
+          },
+          {
+            label: "Seus resgates",
+            value: number(orders),
+            detail: "Produtos reservados ou retirados",
+          },
+          {
+            label: "Missões disponíveis",
+            value: number(missions),
+            detail: "Novas chances de conquistar",
+          },
+        ]}
+      />
+      <div className="welcome-line">
+        <span>
+          <span className="live-dot" />
+          BOM TER VOCÊ POR AQUI
+        </span>
+        <span>
+          {new Intl.DateTimeFormat("pt-BR", {
+            dateStyle: "long",
+            timeZone: "America/Sao_Paulo",
+          }).format(now)}
+        </span>
       </div>
-      {products.length ? (
-        <div className="product-grid">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} balance={user.balance} />
-          ))}
+      <div className="home-title">
+        <h1>Bem-vindo ao SSD VBJ2!</h1>
+        <p>
+          Acompanhe nossas conquistas, participe das missões e faça parte das
+          ações da nossa equipe.
+        </p>
+      </div>
+      <div className="community-layout">
+        <div className="community-main">
+          <CommunityFeed user={user} limit={5} />
+          <CommunityMoments user={user} recent />
         </div>
-      ) : (
-        <Empty
-          title="Novidades estão a caminho"
-          text="Os produtos aparecerão aqui assim que a administração cadastrar produtos e lotes disponíveis."
-        />
-      )}
+        <CommunityAside user={user} />
+      </div>
       <div className="bottom-grid">
         <section className="mission-promo">
           <div className="promo-icon">

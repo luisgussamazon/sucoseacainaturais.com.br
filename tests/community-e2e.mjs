@@ -53,6 +53,8 @@ export async function runCommunityChecks({
     publishedAt: new Date(Date.now() - 1000).toISOString(),
     imageAuthorization: "on",
     restrictedChecked: "on",
+    recognitionAuthorization: "on",
+    includePhotos: "on",
   };
   const hrUser = await db.user.create({
     data: {
@@ -94,9 +96,13 @@ export async function runCommunityChecks({
       await ok(a, "grant", {
         userId: user.id,
         publish: "on",
+        photos: "on",
+        albums: "on",
+        events: "on",
+        missions: "on",
+        recognize: "on",
         review: "on",
         moderate: "on",
-        ...(user.id === leaderUser.id ? { leadership: "on" } : {}),
       });
     await ok(hr, "post", content, photo);
     await ok(leader, "post", {
@@ -206,6 +212,10 @@ export async function runCommunityChecks({
       },
       photo,
     );
+    await db.communityPost.updateMany({
+      where: { title: "Apenas gestão QA" },
+      data: { visibility: "MANAGEMENT" },
+    });
     await e.page.reload();
     for (const title of [
       "Rascunho secreto QA",

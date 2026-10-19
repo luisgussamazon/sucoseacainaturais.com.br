@@ -2,31 +2,29 @@
 import { db } from "./db";
 import sharp from "sharp";
 import { z } from "zod";
-export const categories = [
-  "Ações do RH",
-  "Eventos",
-  "Reconhecimento",
-  "Comunicados",
-  "Campanhas",
-  "Conquistas da operação",
-] as const;
+import { permissions } from "./community-options";
+export { categories } from "./community-options";
 export const photoGuidance =
   "Envie somente imagens autorizadas. Não fotografe informações confidenciais, dados pessoais, etiquetas sensíveis ou situações que comprometam a segurança da operação. Nunca fotografe em condições inseguras.";
 export type Actor = User & { communityGrant: CommunityGrant | null };
 export function rights(u: Actor) {
   const g = u.communityGrant;
-  const eligible = u.role === "ADMIN" || u.role === "HR" || !!g?.leadership;
   return {
-    publish: eligible && !!g?.publish,
-    review: eligible && !!g?.review,
-    moderate: eligible && !!g?.moderate,
+    publish: !!g?.publish,
+    photos: !!g?.photos,
+    albums: !!g?.albums,
+    events: !!g?.events,
+    missions: !!g?.missions,
+    recognize: !!g?.recognize,
+    review: !!g?.review,
+    moderate: !!g?.moderate,
     manage: u.role === "ADMIN",
-    management: eligible,
+    management: u.role === "ADMIN" || permissions.some((p) => !!g?.[p.key]),
   };
 }
 export function demand(
   u: Actor,
-  permission: "publish" | "review" | "moderate" | "manage",
+  permission: (typeof permissions)[number]["key"] | "manage",
 ) {
   if (!rights(u)[permission])
     throw new CommunityError("Você não tem autorização para esta ação.", 403);
@@ -59,22 +57,29 @@ export const dateValue = (f: FormData, k: string) =>
       return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s) ? s + "-03:00" : s;
     })(),
   );
-export const publication = (f: FormData) => ({
-  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).parse(f.get("status")),
-  visibility: z.enum(["INTERNAL", "MANAGEMENT"]).parse(f.get("visibility")),
-});
-export const publishedWhere = (u: Actor) => ({
+export const publication = (f: FormData) => {
+  const value = String(f.get("status") ?? "");
+  const status =
+    value === "SCHEDULED"
+      ? "PUBLISHED"
+      : z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).parse(value);
+  return {
+    status: status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
+    visibility: "INTERNAL" as const,
+  };
+};
+export const publishedWhere = (_u: Actor) => ({
   status: "PUBLISHED" as const,
-  ...(!rights(u).management ? { visibility: "INTERNAL" as const } : {}),
+  visibility: "INTERNAL" as const,
 });
 export function readable(
-  item: { status: string; visibility: string; publishedAt?: Date },
-  u: Actor,
+  item: { status: string; publishedAt?: Date; visibility?: string },
+  _u: Actor,
 ) {
   return (
     item.status === "PUBLISHED" &&
-    (!item.publishedAt || item.publishedAt <= new Date()) &&
-    (item.visibility === "INTERNAL" || rights(u).management)
+    (!item.visibility || item.visibility === "INTERNAL") &&
+    (!item.publishedAt || item.publishedAt <= new Date())
   );
 }
 export async function serial<T>(
@@ -165,7 +170,8 @@ export async function imageFiles(f: FormData, max = 8) {
           width: info.width,
           height: info.height,
           mime: "image/webp",
-          cover: index === 0,
+          cover: index === Number(f.get("coverIndex") ?? 0),
+          position: index,
           expiresAt: new Date(Date.now() + 365 * 86400000),
         };
       } catch {
@@ -182,34 +188,67 @@ export async function mediaAllowed(id: string, u: Actor) {
     include: {
       post: true,
       album: true,
+      event: true,
       photoMission: { include: { mission: true } },
       evidence: { include: { photoMission: true } },
     },
   });
   if (!m || m.expiresAt <= new Date()) return null;
   const r = rights(u);
+  // Evidence access remains restricted to its participant and assigned reviewer.
   if (m.evidence) {
-    if (
-      m.evidence.userId !== u.id &&
-      !(
-        r.review &&
+    return m.evidence.userId === u.id ||
+      (r.review &&
         (!m.evidence.photoMission.reviewerId ||
-          m.evidence.photoMission.reviewerId === u.id)
-      )
-    )
-      return null;
-  } else if (m.post) {
-    if (!readable(m.post, u) && !r.publish) return null;
-  } else if (m.album) {
-    if (!readable(m.album, u) && !r.publish) return null;
-  } else if (m.photoMission) {
-    if (
-      !(
-        m.photoMission.status === "PUBLISHED" && m.photoMission.mission.active
-      ) &&
-      !r.publish
-    )
-      return null;
-  } else return null;
-  return m;
+          m.evidence.photoMission.reviewerId === u.id))
+      ? m
+      : null;
+  }
+  const parent = m.post ?? m.album ?? m.event;
+  if (parent) {
+    const released =
+      readable(parent, u) &&
+      (await mediaConsent(
+        parent,
+        m.album ? "ALBUM" : m.post ? "POST" : "EVENT",
+      ));
+    // No new permission bypasses consent or opens another author's drafts.
+    const ownerPreview =
+      m.ownerId === u.id &&
+      (m.post ? r.publish || r.recognize : m.album ? r.albums : r.events) &&
+      r.photos;
+    return released || ownerPreview ? m : null;
+  }
+  if (m.photoMission) {
+    return (m.photoMission.status === "PUBLISHED" &&
+      m.photoMission.mission.active) ||
+      (m.ownerId === u.id && r.missions && r.photos)
+      ? m
+      : null;
+  }
+  return null;
+}
+
+export async function mediaConsent(
+  parent: {
+    id: string;
+    imageAuthorization: boolean | null;
+    restrictedChecked: boolean | null;
+  },
+  kind: "POST" | "ALBUM" | "EVENT",
+  tx: Prisma.TransactionClient = db,
+) {
+  if (parent.imageAuthorization === true && parent.restrictedChecked === true)
+    return true;
+  if (
+    kind === "ALBUM" &&
+    parent.imageAuthorization === null &&
+    parent.restrictedChecked === null
+  ) {
+    return !!(await tx.audit.findFirst({
+      where: { action: "COMMUNITY_ALBUM", details: parent.id },
+      select: { id: true },
+    }));
+  }
+  return false;
 }
