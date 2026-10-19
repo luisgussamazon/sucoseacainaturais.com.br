@@ -5,6 +5,7 @@ import "./redesign.css";
 import "./mobile.css";
 import "./community.css";
 import "./product-photo.css";
+import "./store.css";
 export const metadata: Metadata = {
   title: "SSD VBJ2",
   applicationName: "SSD VBJ2",
