@@ -1,3 +1,4 @@
+import { productPhotoSrc } from "@/lib/product-photo";
 import { ProductImage } from "./product-image";
 import { Product, Batch } from "@prisma/client";
 import { redeem } from "@/lib/actions";
@@ -16,7 +17,7 @@ export function ProductCard({
   return (
     <article className="product-card">
       <div className="product-image">
-        <ProductImage src={product.imageUrl} alt={product.name} />
+        <ProductImage src={productPhotoSrc(product)} alt={product.name} />
         <span className="product-category">{product.category}</span>
         {expires && (
           <span className="expiry">

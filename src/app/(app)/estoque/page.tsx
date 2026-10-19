@@ -1,7 +1,11 @@
+import {
+  ProductForm,
+  ProductPhotoField,
+} from "@/components/product-photo-field";
 import { ProductManagement } from "@/components/management";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { createBatch, createProduct } from "@/lib/actions";
+import { createBatch, saveProduct } from "@/lib/actions";
 import { PageTitle, Field, date, Empty } from "@/components/ui";
 export default async function Inventory() {
   await requireRole(["ADMIN"]);
@@ -66,16 +70,11 @@ export default async function Inventory() {
       <div className="management-grid">
         <section className="panel">
           <h2>Cadastrar produto</h2>
-          <form action={createProduct} className="form-stack">
+          <ProductForm action={saveProduct}>
             <Field label="Nome do produto" name="name" />
             <Field label="Descrição" name="description" />
             <Field label="Categoria" name="category" />
-            <Field
-              label="Foto (URL HTTPS)"
-              name="imageUrl"
-              type="url"
-              placeholder="https://..."
-            />
+            <ProductPhotoField />
             <Field
               label="Preço em Amazonitos"
               name="price"
@@ -84,7 +83,7 @@ export default async function Inventory() {
               max={100000}
             />
             <button className="button">Cadastrar produto</button>
-          </form>
+          </ProductForm>
         </section>
         <section className="panel">
           <h2>Registrar entrada de lote</h2>

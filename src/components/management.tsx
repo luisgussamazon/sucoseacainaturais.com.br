@@ -1,6 +1,8 @@
+import { ProductForm, ProductPhotoField } from "./product-photo-field";
+import { productPhotoSrc, storedProductPhoto } from "@/lib/product-photo";
 import { db } from "@/lib/db";
 import {
-  updateProduct,
+  saveProduct,
   adjustStock,
   closeMission,
   resetPassword,
@@ -21,7 +23,7 @@ export async function ProductManagement() {
             <summary>
               {p.name} · {p.active ? "Ativo" : "Pausado"}
             </summary>
-            <form action={updateProduct} className="form-stack">
+            <ProductForm action={saveProduct} editing key={productPhotoSrc(p)}>
               <input type="hidden" name="productId" value={p.id} />
               {[
                 { label: "Nome", name: "name", value: p.name },
@@ -31,13 +33,16 @@ export async function ProductManagement() {
                   value: p.description,
                 },
                 { label: "Categoria", name: "category", value: p.category },
-                { label: "Foto HTTPS", name: "imageUrl", value: p.imageUrl },
               ].map((f) => (
                 <label className="field" key={f.name}>
                   {f.label}
                   <input name={f.name} defaultValue={f.value} required />
                 </label>
               ))}
+              <ProductPhotoField
+                initialUrl={storedProductPhoto(p.imageUrl) ? "" : p.imageUrl}
+                initialPreview={productPhotoSrc(p)}
+              />
               <label className="field">
                 Preço
                 <input
@@ -57,7 +62,7 @@ export async function ProductManagement() {
                 </select>
               </label>
               <button className="button">Salvar produto</button>
-            </form>
+            </ProductForm>
           </details>
         ))}
       </section>

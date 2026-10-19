@@ -1,4 +1,5 @@
 "use server";
+import { resolveProductPhoto, ProductPhotoError } from "./product-photo";
 import { demand } from "./community";
 import { randomBytes } from "node:crypto";
 import { Prisma } from "@prisma/client";
@@ -230,10 +231,7 @@ export async function createProduct(f: FormData) {
   const name = z.string().min(2).max(100).parse(str(f, "name"));
   const description = z.string().min(5).max(1000).parse(str(f, "description"));
   const category = z.string().min(2).max(60).parse(str(f, "category"));
-  const imageUrl = z
-    .url()
-    .refine((v) => v.startsWith("https://"))
-    .parse(str(f, "imageUrl"));
+  const imageUrl = await resolveProductPhoto(f);
   const price = positive.parse(f.get("price"));
   await transaction(async (tx) => {
     const product = await tx.product.create({
@@ -409,10 +407,11 @@ export async function updateProduct(f: FormData) {
   const name = z.string().min(2).max(100).parse(str(f, "name"));
   const description = z.string().min(5).max(1000).parse(str(f, "description"));
   const category = z.string().min(2).max(60).parse(str(f, "category"));
-  const imageUrl = z
-    .url()
-    .refine((v) => v.startsWith("https://"))
-    .parse(str(f, "imageUrl"));
+  const existing = await db.product.findUniqueOrThrow({
+    where: { id },
+    select: { imageUrl: true },
+  });
+  const imageUrl = await resolveProductPhoto(f, existing.imageUrl);
   const price = positive.parse(f.get("price"));
   const active = f.get("active") === "true";
   await transaction(async (tx) => {
@@ -470,4 +469,23 @@ export async function adjustStock(f: FormData) {
     });
   });
   revalidatePath("/", "layout");
+}
+
+export async function saveProduct(
+  form: FormData,
+): Promise<{ error?: string; success?: string }> {
+  await requireRole(["ADMIN"]);
+  try {
+    if (str(form, "productId")) await updateProduct(form);
+    else await createProduct(form);
+    return { success: "Produto salvo com sucesso." };
+  } catch (error) {
+    if (error instanceof ProductPhotoError) return { error: error.message };
+    if (error instanceof z.ZodError)
+      return {
+        error:
+          "Revise os campos obrigatórios, o preço e os limites do cadastro.",
+      };
+    return { error: "Não foi possível salvar o produto. Tente novamente." };
+  }
 }

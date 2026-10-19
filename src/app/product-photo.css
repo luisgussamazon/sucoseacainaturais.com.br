@@ -1,0 +1,56 @@
+.product-form fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+.product-form fieldset:disabled {
+  opacity: 0.7;
+}
+.product-photo-field {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.product-photo-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.product-photo-field small {
+  color: #65758a;
+  line-height: 1.5;
+  font-size: 12px;
+}
+.product-photo-preview {
+  width: 100%;
+  max-width: 320px;
+  height: 200px;
+  object-fit: contain;
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+.product-photo-buttons .secondary {
+  background: #f5f7fa;
+  color: #30445d;
+  border: 1px solid #dce4ed;
+}
+.product-form fieldset > .button {
+  justify-self: start;
+}
+@media (max-width: 600px) {
+  .product-photo-buttons > .button {
+    width: 100%;
+    justify-content: center;
+  }
+  .product-photo-preview {
+    max-width: 100%;
+    height: 180px;
+  }
+  .product-form fieldset > .button {
+    width: 100%;
+    justify-content: center;
+  }
+}
