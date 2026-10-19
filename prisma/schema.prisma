@@ -84,6 +84,13 @@ model Batch {
 }
 
 model Order {
+  pickupCode String @unique @default(dbgenerated("gen_random_uuid()::text"))
+  collectedAt DateTime?
+  collectedById String?
+  collectedByName String?
+  cancelledAt DateTime?
+  cancelledByName String?
+  share RedemptionShare?
   id          String       @id @default(cuid())
   userId      String
   user        User         @relation(fields: [userId], references: [id])
@@ -239,6 +246,7 @@ model CommunityAlbum {
 }
 
 model CommunityPost {
+  redemptionShare RedemptionShare?
   completionId          String?             @unique
   completion            Completion?         @relation(fields: [completionId], references: [id], onDelete: Restrict)
   recognitionIdentified Boolean             @default(false)
@@ -419,4 +427,26 @@ model MediaComment {
 
   @@index([threadId, hidden, createdAt])
   @@index([userId, createdAt])
+}
+
+model RedemptionShare {
+ orderId String @id
+ order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+ postId String @unique
+ post CommunityPost @relation(fields: [postId], references: [id], onDelete: Restrict)
+ createdAt DateTime @default(now())
+ reports RedemptionReport[]
+}
+model RedemptionReport {
+ postId String
+ share RedemptionShare @relation(fields: [postId], references: [postId], onDelete: Restrict)
+ reporterId String
+ reason String
+ createdAt DateTime @default(now())
+ @@id([postId, reporterId])
+}
+model PickupAttempt {
+ actorId String @id
+ windowStart DateTime @default(now())
+ attempts Int @default(0)
 }

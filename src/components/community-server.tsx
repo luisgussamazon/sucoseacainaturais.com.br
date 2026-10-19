@@ -1,3 +1,4 @@
+import { SharePostActions } from "./redemption-center";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { currentUser } from "@/lib/auth";
@@ -76,6 +77,7 @@ export async function CommunityFeed({
     skip: (page - 1) * limit,
     include: {
       author: { select: { name: true } },
+      redemptionShare: { select: { postId: true } },
       media: photoSelect(),
     },
   });
@@ -115,6 +117,7 @@ export async function CommunityFeed({
           )}
           <Link href={"/mural?post=" + p.id}>Abrir publicação completa →</Link>
           <SocialInteractions kind="POST" targetId={p.id} />
+          {p.redemptionShare && <SharePostActions postId={p.id} own={p.authorId===user.id} admin={user.role==="ADMIN"} />}
         </article>
       ))}
       <div className="community-links">

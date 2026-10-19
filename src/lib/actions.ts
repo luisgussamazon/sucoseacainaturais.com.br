@@ -1,4 +1,5 @@
 "use server";
+import { finalizeOrder } from "./order-transition";
 import { resolveProductPhoto, ProductPhotoError } from "./product-photo";
 import { demand } from "./community";
 import { randomBytes } from "node:crypto";
@@ -307,36 +308,7 @@ export async function updateOrder(f: FormData) {
   const actor = await requireRole(["ADMIN"]);
   const status = z.enum(["COLLECTED", "CANCELLED"]).parse(f.get("status"));
   await transaction(async (tx) => {
-    const order = await tx.order.findUniqueOrThrow({
-      where: { id: str(f, "orderId") },
-      include: { allocations: true },
-    });
-    const changed = await tx.order.updateMany({
-      where: { id: order.id, status: "RESERVED" },
-      data: { status },
-    });
-    if (!changed.count) throw new Error("Pedido já finalizado");
-    if (status === "CANCELLED") {
-      for (const a of order.allocations)
-        await tx.batch.update({
-          where: { id: a.batchId },
-          data: { quantity: { increment: a.quantity } },
-        });
-      await tx.user.update({
-        where: { id: order.userId },
-        data: { balance: { increment: order.cost } },
-      });
-      await tx.ledger.create({
-        data: {
-          userId: order.userId,
-          amount: order.cost,
-          description: `Estorno ${order.id}`,
-        },
-      });
-    }
-    await tx.audit.create({
-      data: { actorId: actor.id, action: status, details: order.id },
-    });
+    await finalizeOrder(tx, str(f, "orderId"), status, actor);
   });
   revalidatePath("/", "layout");
 }
