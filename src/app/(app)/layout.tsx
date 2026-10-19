@@ -1,6 +1,8 @@
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { Brand } from "@/components/brand";
 import Link from "next/link";
+import { rights } from "@/lib/community";
+import { communityActor } from "@/components/community-server";
 import { requireUser } from "@/lib/auth";
 import { Navigation } from "@/components/navigation";
 import { logout } from "@/lib/actions";
@@ -11,14 +13,16 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireUser();
+  const user = await communityActor();
+  const r = rights(user);
+  const communityAccess = r.publish || r.review || r.moderate || r.manage;
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Navigation role={user.role} />
+        <Navigation role={user.role} communityAccess={communityAccess} />
         <div className="sidebar-footer">FEITO PARA QUEM FAZ A DIFERENÇA</div>
       </aside>
-      <MobileNavigation role={user.role} />
+      <MobileNavigation role={user.role} communityAccess={communityAccess} />
       <div className="workspace">
         <header className="topbar">
           <Link href="/" className="brand header-brand">

@@ -1,0 +1,331 @@
+﻿.community-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(260px, 3fr);
+  gap: 24px;
+  margin: 24px 0 32px;
+  align-items: start;
+}
+.community-feed,
+.community-aside,
+.community-management {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+}
+.community-aside .panel,
+.community-post,
+.community-management > .panel,
+.community-evidence,
+.community-albums .panel {
+  padding: 24px;
+}
+.community-post-meta,
+.post-interactions,
+.gallery-controls,
+.community-links,
+.community-tabs,
+.community-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.community-post-meta {
+  justify-content: space-between;
+}
+.community-post h2 {
+  margin: 14px 0 6px;
+}
+.community-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  margin: 18px 0;
+}
+.community-gallery {
+  margin: 16px 0;
+  min-width: 0;
+}
+.gallery-cover {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f6f7f9;
+  cursor: zoom-in;
+}
+.gallery-cover img {
+  display: block;
+  width: 100%;
+  max-height: 440px;
+  object-fit: contain;
+}
+.gallery-count {
+  background: transparent;
+  border: 0;
+  color: #a34d00;
+  padding: 12px 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+.community-gallery dialog {
+  margin: auto;
+  width: min(960px, 95vw);
+  max-height: 94dvh;
+  padding: 16px;
+  border: 0;
+  border-radius: 16px;
+  background: #fff;
+  color: #131921;
+}
+.community-gallery dialog::backdrop {
+  background: #131921d9;
+}
+.community-gallery dialog > img {
+  width: 100%;
+  height: 65dvh;
+  object-fit: contain;
+  margin: 12px 0;
+}
+.gallery-controls {
+  justify-content: space-between;
+}
+.community-form fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+.community-form textarea,
+.community-filters input,
+.community-filters select,
+.community-form input:not([type="checkbox"]),
+.community-form select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid #dbe1e8;
+  border-radius: 9px;
+  padding: 11px;
+  background: #fff;
+  color: #131921;
+  font: inherit;
+}
+.community-form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+.community-form .button {
+  justify-self: start;
+}
+.community-form .check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.community-form .check input {
+  margin-top: 4px;
+  flex: 0 0 auto;
+}
+.community-form-grid,
+.community-albums {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.community-form > .notice {
+  margin-top: 12px;
+}
+.photo-previews {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.photo-previews img {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  background: #f6f7f9;
+  border-radius: 8px;
+}
+.photo-upload {
+  display: grid;
+  gap: 10px;
+}
+.post-interactions {
+  border-top: 1px solid #eef0f4;
+  padding-top: 16px;
+  margin-top: 16px;
+}
+.community-comment,
+.community-management-row {
+  padding: 18px 0;
+  border-bottom: 1px solid #e9edf1;
+  overflow-wrap: anywhere;
+}
+.community-comment small {
+  display: block;
+  color: #66758a;
+}
+.community-comment p {
+  white-space: pre-wrap;
+}
+.community-post details {
+  margin-top: 16px;
+}
+.community-post summary,
+.photo-missions summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-weight: 600;
+}
+.community-mini {
+  display: grid;
+  gap: 7px;
+  padding: 17px 0;
+  border-bottom: 1px solid #edf0f3;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+.community-mini img {
+  width: 100%;
+  max-height: 130px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.community-mini span,
+.community-mini small {
+  font-size: 13px;
+  color: #52627a;
+}
+.community-tabs {
+  padding: 16px;
+  border: 1px solid #e5e9ef;
+  border-radius: 14px;
+  background: white;
+}
+.community-tabs a {
+  padding: 8px;
+  color: #9b4800;
+}
+.community-evidence {
+  margin: 20px 0;
+}
+.community-management-row > span {
+  display: block;
+  margin: 8px 0;
+}
+.community-management-row .community-gallery {
+  max-width: 360px;
+}
+.community-filters {
+  padding: 16px 0;
+  align-items: end;
+}
+.community-filters label {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  min-width: 150px;
+}
+.photo-missions {
+  margin-bottom: 28px;
+}
+.photo-missions > .notice {
+  line-height: 1.7;
+}
+.community-albums {
+  margin: 24px 0;
+}
+.community-layout .section-heading {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.community-form .notice {
+  overflow-wrap: anywhere;
+}
+.community-management h2,
+.community-aside h2 {
+  font-size: 20px;
+}
+.community-management .stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.community-post,
+.community-aside .panel,
+.community-evidence {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+  .community-layout {
+    grid-template-columns: minmax(0, 2fr) minmax(230px, 1fr);
+    gap: 16px;
+  }
+  .community-management .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 768px) {
+  .community-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    margin: 20px 0;
+  }
+  .community-aside {
+    gap: 16px;
+  }
+  .community-post,
+  .community-aside .panel,
+  .community-evidence,
+  .community-albums .panel,
+  .community-management > .panel {
+    padding: 18px;
+  }
+  .community-form-grid,
+  .community-albums {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .community-post h2 {
+    font-size: 21px;
+  }
+  .community-tabs {
+    gap: 4px;
+  }
+  .community-tabs a {
+    padding: 8px;
+  }
+  .community-form .button {
+    width: 100%;
+    justify-self: stretch;
+  }
+  .community-gallery dialog > img {
+    height: 58dvh;
+  }
+  .gallery-controls .button {
+    font-size: 12px;
+    padding: 10px;
+  }
+  .community-filters {
+    align-items: stretch;
+  }
+  .community-filters label {
+    min-width: 100%;
+  }
+  .community-management .stat-card {
+    min-width: 0;
+  }
+  .community-management .stats-grid {
+    gap: 10px;
+  }
+  .community-management .stat-card small {
+    overflow-wrap: anywhere;
+  }
+  .community-layout .section-heading {
+    align-items: start;
+  }
+}

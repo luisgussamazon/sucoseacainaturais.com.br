@@ -20,7 +20,13 @@ const links = [
   { href: "/missoes", label: "Missões e quizzes", icon: Sparkles },
   { href: "/resgates", label: "Meus resgates", icon: PackageCheck },
 ];
-export function Navigation({ role }: { role: string }) {
+export function Navigation({
+  role,
+  communityAccess = false,
+}: {
+  role: string;
+  communityAccess?: boolean;
+}) {
   const pathname = usePathname();
   return (
     <>
@@ -38,6 +44,29 @@ export function Navigation({ role }: { role: string }) {
           </Link>
         ))}
       </nav>
+      <Link
+        className={`nav-link ${pathname.startsWith("/mural") ? "active" : ""}`}
+        href="/mural"
+      >
+        <Users size={19} />
+        Mural SSD VBJ2
+      </Link>
+      <Link
+        className={`nav-link ${pathname.startsWith("/momentos") ? "active" : ""}`}
+        href="/momentos"
+      >
+        <Leaf size={19} />
+        Momentos VBJ2
+      </Link>
+      {communityAccess && (
+        <Link
+          className={`nav-link ${pathname.startsWith("/comunidade") ? "active" : ""}`}
+          href="/comunidade"
+        >
+          <Users size={19} />
+          Comunidade e Eventos
+        </Link>
+      )}
       {role !== "EMPLOYEE" && (
         <>
           <div className="nav-caption">GESTÃO</div>

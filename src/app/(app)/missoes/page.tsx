@@ -3,15 +3,16 @@ import { requireUser } from "@/lib/auth";
 import { completeMission } from "@/lib/actions";
 import { Empty, PageTitle, date, Flash } from "@/components/ui";
 import { Sparkles } from "lucide-react";
+import { PhotoMissions, communityActor } from "@/components/community-server";
 export default async function Missions({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
-  const u = await requireUser();
+  const u = await communityActor();
   const params = await searchParams;
   const missions = await db.mission.findMany({
-    where: { active: true, endsAt: { gt: new Date() } },
+    where: { active: true, endsAt: { gt: new Date() }, photoConfig: null },
     include: { completions: { where: { userId: u.id }, select: { id: true } } },
     orderBy: { endsAt: "asc" },
   });
@@ -23,6 +24,7 @@ export default async function Missions({
         description="Participe das campanhas da equipe. Cada missão concluída vale uma nova conquista."
       />
       <Flash {...params} />
+      <PhotoMissions user={u} />
       {missions.length ? (
         <div className="mission-grid">
           {missions.map((m) => (

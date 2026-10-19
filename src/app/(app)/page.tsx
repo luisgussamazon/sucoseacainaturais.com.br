@@ -4,8 +4,13 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Empty, number, SectionHeading, Stats, date } from "@/components/ui";
 import { ProductCard } from "@/components/product-card";
+import {
+  CommunityFeed,
+  CommunityAside,
+  communityActor,
+} from "@/components/community-server";
 export default async function Home() {
-  const user = await requireUser();
+  const user = await communityActor();
   const now = new Date();
   const [products, orders, rewards, missions, ledger] = await Promise.all([
     db.product.findMany({
@@ -32,6 +37,10 @@ export default async function Home() {
     db.mission.count({
       where: {
         active: true,
+        OR: [
+          { photoConfig: null },
+          { photoConfig: { status: "PUBLISHED", startsAt: { lte: now } } },
+        ],
         endsAt: { gt: now },
         completions: { none: { userId: user.id } },
       },
@@ -57,10 +66,39 @@ export default async function Home() {
         </span>
       </div>
       <div className="home-title">
-        <h1>
-          Olá, {user.name.split(" ")[0]} <span>☀</span>
-        </h1>
-        <p>Um novo dia para conquistar, aproveitar e fazer a diferença.</p>
+        <h1>Bem-vindo ao SSD VBJ2!</h1>
+        <p>
+          Acompanhe nossas conquistas, participe das missões e faça parte das
+          ações da nossa equipe.
+        </p>
+      </div>
+      <Stats
+        items={[
+          {
+            label: "Seu saldo disponível",
+            value: number(user.balance),
+            detail: "Amazonitos para novas escolhas",
+          },
+          {
+            label: "Amazonitos conquistados",
+            value: number(rewards._sum.amount ?? 0),
+            detail: "Créditos recebidos na sua carteira",
+          },
+          {
+            label: "Seus resgates",
+            value: number(orders),
+            detail: "Produtos reservados ou retirados",
+          },
+          {
+            label: "Missões disponíveis",
+            value: number(missions),
+            detail: "Novas chances de conquistar",
+          },
+        ]}
+      />
+      <div className="community-layout">
+        <CommunityFeed user={user} />
+        <CommunityAside user={user} />
       </div>
       <section className="hero">
         <div className="hero-copy">
@@ -102,30 +140,6 @@ export default async function Home() {
           </div>
         </div>
       </section>
-      <Stats
-        items={[
-          {
-            label: "Seu saldo disponível",
-            value: number(user.balance),
-            detail: "Amazonitos para novas escolhas",
-          },
-          {
-            label: "Amazonitos conquistados",
-            value: number(rewards._sum.amount ?? 0),
-            detail: "Créditos recebidos na sua carteira",
-          },
-          {
-            label: "Seus resgates",
-            value: number(orders),
-            detail: "Produtos reservados ou retirados",
-          },
-          {
-            label: "Missões disponíveis",
-            value: number(missions),
-            detail: "Novas chances de conquistar",
-          },
-        ]}
-      />
       <div className="section-intro">
         <SectionHeading
           title="Boas escolhas, por menos Amazonitos"

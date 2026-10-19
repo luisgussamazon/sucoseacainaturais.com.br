@@ -140,8 +140,10 @@ export async function completeMission(f: FormData) {
     await transaction(async (tx) => {
       const mission = await tx.mission.findUniqueOrThrow({
         where: { id: str(f, "missionId") },
+        include: { photoConfig: true },
       });
       if (
+        !!mission.photoConfig ||
         !mission.active ||
         mission.endsAt < new Date() ||
         mission.answer !==

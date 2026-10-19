@@ -20,18 +20,31 @@ enum OrderStatus {
 }
 
 model User {
-  id           String       @id @default(cuid())
-  name         String
-  email        String       @unique
-  passwordHash String
-  role         Role         @default(EMPLOYEE)
-  active       Boolean      @default(true)
-  balance      Int          @default(0)
-  createdAt    DateTime     @default(now())
-  sessions     Session[]
-  ledger       Ledger[]
-  orders       Order[]
-  completions  Completion[]
+  id                      String             @id @default(cuid())
+  name                    String
+  email                   String             @unique
+  passwordHash            String
+  role                    Role               @default(EMPLOYEE)
+  active                  Boolean            @default(true)
+  balance                 Int                @default(0)
+  createdAt               DateTime           @default(now())
+  communityGrant          CommunityGrant?    @relation("CommunityMember")
+  assignedCommunityGrants CommunityGrant[]   @relation("CommunityAssigner")
+  assignedPhotoMissions   PhotoMission[]     @relation("MissionReviewer")
+  reviewedPhotoEvidence   PhotoEvidence[]    @relation("EvidenceReviewer")
+  moderatedComments       CommunityComment[] @relation("CommentModerator")
+  posts                   CommunityPost[]
+  albums                  CommunityAlbum[]
+  events                  CommunityEvent[]
+  media                   CommunityMedia[]
+  likes                   CommunityLike[]
+  comments                CommunityComment[]
+  evidence                PhotoEvidence[]
+  reviews                 EvidenceReview[]
+  sessions                Session[]
+  ledger                  Ledger[]
+  orders                  Order[]
+  completions             Completion[]
 }
 
 model Session {
@@ -103,16 +116,17 @@ model Ledger {
 }
 
 model Mission {
-  id          String       @id @default(cuid())
+  id          String        @id @default(cuid())
   title       String
   description String
   reward      Int
   question    String
   options     Json
   answer      Int
-  active      Boolean      @default(true)
+  active      Boolean       @default(true)
   endsAt      DateTime
   completions Completion[]
+  photoConfig PhotoMission?
 }
 
 model Completion {
@@ -138,4 +152,206 @@ model LoginAttempt {
   key     String   @id
   count   Int      @default(0)
   resetAt DateTime
+}
+
+// Additive community module. Existing roles and financial tables remain intact.
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CommunityVisibility {
+  INTERNAL
+  MANAGEMENT
+}
+
+enum EvidenceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model CommunityGrant {
+  userId     String   @id
+  user       User     @relation("CommunityMember", fields: [userId], references: [id])
+  publish    Boolean  @default(false)
+  review     Boolean  @default(false)
+  moderate   Boolean  @default(false)
+  leadership Boolean  @default(false)
+  assigner   User     @relation("CommunityAssigner", fields: [assignedBy], references: [id], onDelete: Restrict)
+  assignedBy String
+  updatedAt  DateTime @updatedAt
+}
+
+model CommunityEvent {
+  id          String              @id @default(cuid())
+  title       String
+  description String
+  location    String
+  startsAt    DateTime
+  endsAt      DateTime
+  status      PublicationStatus   @default(DRAFT)
+  visibility  CommunityVisibility @default(INTERNAL)
+  authorId    String
+  author      User                @relation(fields: [authorId], references: [id])
+  posts       CommunityPost[]
+  albums      CommunityAlbum[]
+  createdAt   DateTime            @default(now())
+
+  @@index([status, startsAt])
+}
+
+model CommunityAlbum {
+  id          String              @id @default(cuid())
+  title       String
+  description String
+  eventDate   DateTime
+  status      PublicationStatus   @default(DRAFT)
+  visibility  CommunityVisibility @default(INTERNAL)
+  authorId    String
+  author      User                @relation(fields: [authorId], references: [id])
+  eventId     String?
+  event       CommunityEvent?     @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  media       CommunityMedia[]
+  posts       CommunityPost[]
+  createdAt   DateTime            @default(now())
+
+  @@index([status, eventDate])
+}
+
+model CommunityPost {
+  id                 String              @id @default(cuid())
+  title              String
+  description        String
+  category           String
+  status             PublicationStatus   @default(DRAFT)
+  visibility         CommunityVisibility @default(INTERNAL)
+  publishedAt        DateTime            @default(now())
+  pinned             Boolean             @default(false)
+  authorId           String
+  author             User                @relation(fields: [authorId], references: [id])
+  eventId            String?
+  event              CommunityEvent?     @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  albumId            String?
+  album              CommunityAlbum?     @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  evidenceId         String?             @unique
+  evidence           PhotoEvidence?      @relation(fields: [evidenceId], references: [id])
+  imageAuthorization Boolean             @default(false)
+  restrictedChecked  Boolean             @default(false)
+  media              CommunityMedia[]
+  likes              CommunityLike[]
+  comments           CommunityComment[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([status, pinned, publishedAt])
+}
+
+model CommunityLike {
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  createdAt DateTime      @default(now())
+
+  @@id([postId, userId])
+}
+
+model CommunityComment {
+  id               String        @id @default(cuid())
+  postId           String
+  post             CommunityPost @relation(fields: [postId], references: [id])
+  userId           String
+  user             User          @relation(fields: [userId], references: [id])
+  text             String
+  hidden           Boolean       @default(false)
+  moderator        User?         @relation("CommentModerator", fields: [moderatedBy], references: [id], onDelete: Restrict)
+  moderatedBy      String?
+  moderationReason String?
+  createdAt        DateTime      @default(now())
+
+  @@index([postId, hidden, createdAt])
+}
+
+model PhotoMission {
+  id                 String            @id @default(cuid())
+  missionId          String            @unique
+  mission            Mission           @relation(fields: [missionId], references: [id])
+  category           String
+  startsAt           DateTime
+  maxPhotos          Int               @default(3)
+  participationLimit Int               @default(100)
+  allowResubmit      Boolean           @default(false)
+  status             PublicationStatus @default(DRAFT)
+  responsible        User?             @relation("MissionReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  reviewerId         String?
+  media              CommunityMedia[]
+  evidence           PhotoEvidence[]
+
+  @@index([status, startsAt])
+}
+
+model PhotoEvidence {
+  id             String           @id @default(cuid())
+  photoMissionId String
+  photoMission   PhotoMission     @relation(fields: [photoMissionId], references: [id])
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+  status         EvidenceStatus   @default(PENDING)
+  shareConsent   Boolean          @default(false)
+  attempts       Int              @default(1)
+  submittedAt    DateTime         @default(now())
+  reviewedAt     DateTime?
+  evaluatedBy    User?            @relation("EvidenceReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  reviewerId     String?
+  reason         String?
+  media          CommunityMedia[]
+  reviews        EvidenceReview[]
+  post           CommunityPost?
+
+  @@unique([photoMissionId, userId])
+  @@index([status, submittedAt])
+}
+
+model EvidenceReview {
+  id         String         @id @default(cuid())
+  evidenceId String
+  evidence   PhotoEvidence  @relation(fields: [evidenceId], references: [id])
+  reviewerId String
+  reviewer   User           @relation(fields: [reviewerId], references: [id])
+  status     EvidenceStatus
+  reason     String?
+  createdAt  DateTime       @default(now())
+
+  @@index([evidenceId, createdAt])
+}
+
+// Private persistent media: never served from /public or a public bucket.
+model CommunityMedia {
+  attempt        Int             @default(1)
+  id             String          @id @default(uuid())
+  ownerId        String
+  owner          User            @relation(fields: [ownerId], references: [id])
+  bytes          Bytes
+  width          Int
+  height         Int
+  mime           String          @default("image/webp")
+  cover          Boolean         @default(false)
+  expiresAt      DateTime
+  createdAt      DateTime        @default(now())
+  postId         String?
+  post           CommunityPost?  @relation(fields: [postId], references: [id], onDelete: Restrict)
+  albumId        String?
+  album          CommunityAlbum? @relation(fields: [albumId], references: [id], onDelete: Restrict)
+  photoMissionId String?
+  photoMission   PhotoMission?   @relation(fields: [photoMissionId], references: [id], onDelete: Restrict)
+  evidenceId     String?
+  evidence       PhotoEvidence?  @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
+
+  @@index([expiresAt])
+  @@index([postId])
+  @@index([albumId])
+  @@index([evidenceId])
 }

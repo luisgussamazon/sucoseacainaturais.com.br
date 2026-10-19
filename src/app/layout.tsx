@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./redesign.css";
 import "./mobile.css";
+import "./community.css";
 export const metadata: Metadata = {
   title: "SSD VBJ2",
   applicationName: "SSD VBJ2",

@@ -194,7 +194,9 @@ try {
   const e = await context.newPage();
   await login(e, "colaborador@qa.invalid");
   mkdirSync(".setup/screenshots", { recursive: true });
-  await e.getByRole("heading", { name: /Olá,/ }).waitFor();
+  await e
+    .getByRole("heading", { name: "Bem-vindo ao SSD VBJ2!", exact: true })
+    .waitFor();
   await e.screenshot({
     path: ".setup/screenshots/dashboard-desktop.png",
     fullPage: true,
@@ -203,7 +205,9 @@ try {
   assert.equal(await e.locator("form select[name=userId]").count(), 0);
   check("Colaborador não acessa formulário RH");
   await e.goto("http://localhost:3147/loja");
-  assert.ok((await e.locator(".stock").innerText()).includes("4 unidades"));
+  assert.ok(
+    (await e.locator(".stock:visible").innerText()).includes("4 unidades"),
+  );
   await e.getByRole("button", { name: "Resgatar", exact: true }).click();
   await e.waitForURL("**/resgates?success=1");
   assert.equal(
@@ -221,7 +225,7 @@ try {
   assert.equal(order.allocations[0].batchId, early.id);
   check("Resgate debita saldo e usa FEFO sem lotes vencidos");
   await e.goto("http://localhost:3147/missoes");
-  await e.locator('input[name=answer][value="1"]').check();
+  await e.locator('input[name=answer][value="1"]:visible').check();
   await e.getByRole("button", { name: "Enviar resposta" }).click();
   await e.waitForURL("**/missoes?error=mission");
   assert.equal(
@@ -229,7 +233,7 @@ try {
     70,
   );
   check("Resposta incorreta não concede recompensa");
-  await e.locator('input[name=answer][value="0"]').check();
+  await e.locator('input[name=answer][value="0"]:visible').check();
   await e.getByRole("button", { name: "Enviar resposta" }).click();
   await e.waitForURL("**/missoes?success=1");
   assert.equal(
@@ -264,7 +268,9 @@ try {
   );
   check("Cancelamento estorna saldo e estoque");
   await e.goto("http://localhost:3147/loja");
-  await e.locator("input[name=quantity]").evaluate((el) => (el.value = "100"));
+  await e
+    .locator(".product-card:visible input[name=quantity]")
+    .evaluate((el) => (el.value = "100"));
   await e.getByRole("button", { name: "Resgatar", exact: true }).click();
   await e.waitForURL("**/loja?error=redeem");
   assert.equal(
@@ -308,7 +314,9 @@ try {
   await db.batch.update({ where: { id: early.id }, data: { quantity: 1 } });
   await e.goto("http://localhost:3147/");
   await e.setViewportSize({ width: 390, height: 844 });
-  await e.getByRole("heading", { name: /Olá,/ }).waitFor();
+  await e
+    .getByRole("heading", { name: "Bem-vindo ao SSD VBJ2!", exact: true })
+    .waitFor();
   await e.screenshot({
     path: ".setup/screenshots/dashboard-mobile.png",
     fullPage: true,

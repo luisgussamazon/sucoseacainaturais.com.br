@@ -20,7 +20,13 @@ const tabs = [
   { href: "/missoes", label: "Missões", Icon: Sparkles },
   { href: "/perfil", label: "Perfil", Icon: UserRound },
 ];
-export function MobileNavigation({ role }: { role: string }) {
+export function MobileNavigation({
+  role,
+  communityAccess = false,
+}: {
+  role: string;
+  communityAccess?: boolean;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -120,7 +126,7 @@ export function MobileNavigation({ role }: { role: string }) {
                   setOpen(false);
               }}
             >
-              <Navigation role={role} />
+              <Navigation role={role} communityAccess={communityAccess} />
             </div>
             <InstallApp />
           </aside>

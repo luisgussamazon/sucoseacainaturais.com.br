@@ -16,6 +16,7 @@ COPY --from=build --chown=node:node /app/public ./public
 COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/package.json ./package.json
 COPY --from=build --chown=node:node /app/scripts/bootstrap-admin.mjs ./scripts/bootstrap-admin.mjs
+COPY --from=build --chown=node:node /app/scripts/check-community.mjs ./scripts/check-community.mjs
 USER node
 EXPOSE 3000
 CMD ["node","server.js"]
