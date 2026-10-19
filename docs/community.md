@@ -40,7 +40,7 @@ A recompensa não publica fotos. O destaque exige evidência aprovada, consentim
 
 `20261019150000_community_photo_missions` cria somente tabelas/enums/índices/relações novos. Não altera nem remove registros existentes. Tabelas: CommunityGrant, CommunityEvent, CommunityAlbum, CommunityPost, CommunityLike, CommunityComment, PhotoMission, PhotoEvidence, EvidenceReview, CommunityMedia. Restrições SQL adicionais controlam recurso único por mídia, tamanho e limites.
 
-O Railway já usa `npm run db:migrate` no pre-deploy. Não executar reset, db push ou comandos destrutivos. Não há seeds de conteúdo ou concessão automática de permissões.
+O `railway.json` declara `preDeployCommand` como a lista `["npm run db:migrate"]`, conforme o formato documentado pelo Railway. Na primeira publicação deste módulo a migração não rodou automaticamente; foi aplicada explicitamente por SSH com `npm run db:migrate` e confirmada por `scripts/check-community.mjs`. Não executar reset, db push ou comandos destrutivos. Não há seeds de conteúdo ou concessão automática de permissões.
 
 ## Validação reproduzível
 
