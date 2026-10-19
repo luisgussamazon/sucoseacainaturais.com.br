@@ -1,3 +1,4 @@
+import { MobileNavigation } from "@/components/mobile-navigation";
 import { Brand } from "@/components/brand";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
@@ -17,6 +18,7 @@ export default async function AppLayout({
         <Navigation role={user.role} />
         <div className="sidebar-footer">FEITO PARA QUEM FAZ A DIFERENÇA</div>
       </aside>
+      <MobileNavigation role={user.role} />
       <div className="workspace">
         <header className="topbar">
           <Link href="/" className="brand header-brand">

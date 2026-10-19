@@ -1,3 +1,4 @@
+import { InstallApp } from "@/components/pwa-provider";
 import { Brand } from "@/components/brand";
 import { login } from "@/lib/actions";
 import { currentUser } from "@/lib/auth";
@@ -81,6 +82,7 @@ export default async function Login({
             <ArrowRight size={18} />
           </button>
         </form>
+        <InstallApp />
         <p className="login-help">
           <ShieldCheck size={16} /> Precisa de acesso? Fale com o administrador.
         </p>
