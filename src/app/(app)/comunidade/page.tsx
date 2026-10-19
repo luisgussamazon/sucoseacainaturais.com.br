@@ -380,6 +380,15 @@ export default async function Management({
           </Link>
         )}
       </nav>
+      <div
+        className="community-quick-actions"
+        aria-label="Ações de eventos e conquistas"
+      >
+        {r.events && <Link href="?kind=event#editor">Cadastrar evento</Link>}
+        {r.recognize && (
+          <Link href="/comunidade/conquistas">Publicar conquista</Link>
+        )}
+      </div>
       <details className="community-tools">
         <summary>Mais ferramentas</summary>
         <nav

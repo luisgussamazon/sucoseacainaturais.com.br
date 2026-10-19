@@ -153,7 +153,11 @@ export async function CommunityAside({ user }: { user: Actor }) {
     db.communityPost.findMany({
       where: {
         ...publishedWhere(user),
-        category: "Reconhecimento",
+        OR: [
+          { category: "Reconhecimento" },
+          { completionId: { not: null } },
+          { evidenceId: { not: null } },
+        ],
         publishedAt: { lte: now },
       },
       orderBy: { publishedAt: "desc" },
@@ -186,18 +190,34 @@ export async function CommunityAside({ user }: { user: Actor }) {
           </Link>
         ))}
       </section>
-      <section className="panel">
-        <h2>Próximos eventos</h2>
+      <section className="panel home-events" aria-label="Próximos eventos">
+        <div className="section-heading">
+          <h2>Próximos eventos</h2>
+          {rights(user).events && (
+            <Link href="/comunidade?kind=event#editor">Cadastrar evento</Link>
+          )}
+        </div>
         {!events.length && (
-          <p className="muted">Nenhum evento publicado para este período.</p>
+          <p className="muted">
+            Nenhum evento futuro ou em andamento foi publicado. Eventos em
+            rascunho não aparecem aqui.
+          </p>
         )}
         {events.map((e) => (
           <div className="community-mini" key={e.id}>
-            <strong>{e.title}</strong>
+            <Link className="home-card-title" href={"/eventos/" + e.id}>
+              <strong>{e.title}</strong>
+            </Link>
             <span>
-              {date(e.startsAt)} · {e.location}
+              {new Intl.DateTimeFormat("pt-BR", {
+                dateStyle: "short",
+                timeStyle: "short",
+                timeZone: "America/Sao_Paulo",
+              }).format(e.startsAt)}{" "}
+              · {e.location}
             </span>
             <p>{e.description}</p>
+            <Link href={"/eventos/" + e.id}>Ver detalhes do evento →</Link>
             <PhotoGallery
               photos={
                 e.imageAuthorization && e.restrictedChecked ? e.media : []
@@ -208,20 +228,28 @@ export async function CommunityAside({ user }: { user: Actor }) {
           </div>
         ))}
       </section>
-      <section className="panel">
-        <h2>Reconhecimento</h2>
+      <section className="panel home-recognition" aria-label="Reconhecimento">
+        <div className="section-heading">
+          <h2>Reconhecimento</h2>
+          {rights(user).recognize && (
+            <Link href="/comunidade/conquistas">Publicar conquista</Link>
+          )}
+        </div>
         {!recognition.length && (
           <p className="muted">
-            As conquistas reconhecidas pela equipe aparecerão aqui.
+            Nenhum reconhecimento foi publicado. A conclusão ou aprovação de uma
+            missão não autoriza sua divulgação automaticamente.
           </p>
         )}
         {recognition.map((p) => (
           <Link
             className="community-mini"
-            href="/mural?category=Reconhecimento"
+            href={"/mural?post=" + p.id}
             key={p.id}
           >
-            {p.title}
+            <strong>{p.title}</strong>
+            <small>{date(p.publishedAt)}</small>
+            <span>Ver reconhecimento →</span>
           </Link>
         ))}
       </section>

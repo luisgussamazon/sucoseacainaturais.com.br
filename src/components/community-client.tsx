@@ -11,6 +11,15 @@ import { useRouter } from "next/navigation";
 import { CloudUpload, X, FileText } from "lucide-react";
 function updated() {
   window.dispatchEvent(new Event("community:updated"));
+  try {
+    if (typeof BroadcastChannel !== "undefined") {
+      const channel = new BroadcastChannel("ssd-community-updates");
+      channel.postMessage("updated");
+      channel.close();
+    }
+  } catch {
+    /* Polling still refreshes browsers that block cross-tab messaging. */
+  }
 }
 export function CommunityForm({
   action,

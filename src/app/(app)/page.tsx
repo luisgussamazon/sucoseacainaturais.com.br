@@ -1,3 +1,4 @@
+import { CommunityLiveUpdates } from "@/components/community-live-updates";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Leaf, Coins, ArrowUpRight } from "lucide-react";
 
@@ -40,6 +41,7 @@ export default async function Home() {
   ]);
   return (
     <>
+      <CommunityLiveUpdates />
       <section className="hero">
         <div className="hero-copy">
           <div className="hero-tag">
