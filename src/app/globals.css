@@ -1430,3 +1430,10 @@ td code {
 .product-image {
   background: #eef1e8 url("/product-placeholder.svg") center/cover no-repeat;
 }
+
+/* Password visibility controls, shared by login and management forms. */
+.password-control { position: relative; display: block; width: 100%; min-width: 0; }
+.field .password-control input { width: 100%; padding-right: 52px; }
+.password-toggle { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 44px; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: #52677d; cursor: pointer; }
+.password-toggle:hover { background: #fff0dc; color: #a84700; }
+.password-toggle:focus-visible { outline: 2px solid #ff9900; outline-offset: -2px; }

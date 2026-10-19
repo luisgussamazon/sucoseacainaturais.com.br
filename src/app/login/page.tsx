@@ -1,3 +1,4 @@
+import { PasswordInput } from "@/components/password-input";
 import { InstallApp } from "@/components/pwa-provider";
 import { Brand } from "@/components/brand";
 import { login } from "@/lib/actions";
@@ -68,9 +69,8 @@ export default async function Login({
           </label>
           <label className="field">
             Senha
-            <input
+            <PasswordInput
               name="password"
-              type="password"
               autoComplete="current-password"
               required
               maxLength={128}

@@ -1,3 +1,4 @@
+import { PasswordInput } from "./password-input";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -136,7 +137,9 @@ export function Field({
   return (
     <label className="field">
       {label}
-      <input
+      {type === "password" ? (
+        <PasswordInput name={name} required={required} minLength={12} placeholder={placeholder} />
+      ) : (<input
         name={name}
         type={type}
         required={required}
@@ -144,7 +147,7 @@ export function Field({
         max={max}
         minLength={type === "password" ? 12 : undefined}
         placeholder={placeholder}
-      />
+      />)}
     </label>
   );
 }
