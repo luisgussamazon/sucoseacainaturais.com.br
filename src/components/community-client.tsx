@@ -1,4 +1,5 @@
 ﻿"use client";
+import { UserAvatar, type AvatarIdentity } from "./user-avatar";
 import {
   FormEvent,
   useCallback,
@@ -360,12 +361,15 @@ export function PhotoUpload({
   );
 }
 type SocialData = {
+  viewer: AvatarIdentity;
   liked: boolean;
   likeCount: number;
   commentCount: number;
   comments: {
     id: string;
     name: string;
+    userId: string;
+    avatarUpdatedAt: string | null;
     text: string;
     createdAt: string;
     own: boolean;
@@ -512,6 +516,12 @@ export function SocialInteractions({
           <div aria-live="polite">
             {(open ? data?.comments : [])?.map((c) => (
               <div className="community-comment" key={c.id}>
+                <UserAvatar
+                  id={c.userId}
+                  name={c.name}
+                  avatarUpdatedAt={c.avatarUpdatedAt}
+                  size={28}
+                />{" "}
                 <strong>{c.name}</strong>
                 <small>
                   {new Date(c.createdAt).toLocaleDateString("pt-BR")}
@@ -564,6 +574,7 @@ export function SocialInteractions({
               });
             }}
           >
+            {data?.viewer && <UserAvatar {...data.viewer} size={32} />}
             <label className="field">
               Seu comentário
               <textarea

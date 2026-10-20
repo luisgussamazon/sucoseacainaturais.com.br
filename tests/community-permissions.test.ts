@@ -10,6 +10,7 @@ const actor = (
   name: "Usuário",
   email: "qa@example.invalid",
   passwordHash: "unused",
+  avatarUpdatedAt: null,
   mustChangePassword: false,
   role,
   active: true,

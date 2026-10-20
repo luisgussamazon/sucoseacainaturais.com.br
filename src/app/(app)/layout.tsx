@@ -1,3 +1,4 @@
+import { UserMenu } from "@/components/user-menu";
 import { NotificationBell } from "@/components/notification-bell";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { Brand } from "@/components/brand";
@@ -38,22 +39,15 @@ export default async function AppLayout({
               <Coins size={18} />
               {user.balance.toLocaleString("pt-BR")} <span>Amazonitos</span>
             </Link>
-            <div className="avatar">{user.name.charAt(0).toUpperCase()}</div>
-            <div className="profile">
-              <strong>{user.name}</strong>
-              <small>
-                {user.role === "ADMIN"
-                  ? "Administrador"
-                  : user.role === "HR"
-                    ? "Recursos Humanos"
-                    : "Colaborador"}
-              </small>
-            </div>
-            <form action={logout}>
-              <button className="icon-button" title="Sair" aria-label="Sair">
-                <LogOut size={18} />
-              </button>
-            </form>
+            <UserMenu
+              user={{
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatarUpdatedAt: user.avatarUpdatedAt?.toISOString() ?? null,
+              }}
+            />
           </div>
         </header>
         <main>{children}</main>

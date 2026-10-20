@@ -101,7 +101,9 @@ export async function socialRead(
           db.communityLike.count({ where: { postId: id, userId: u.id } }),
           db.communityComment.findMany({
             where: { postId: id, hidden: false, deletedAt: null },
-            include: { user: { select: { name: true } } },
+            include: {
+              user: { select: { id: true, name: true, avatarUpdatedAt: true } },
+            },
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
             take: 20,
             skip: (page - 1) * 20,
@@ -121,7 +123,9 @@ export async function socialRead(
               hidden: false,
               deletedAt: null,
             },
-            include: { user: { select: { name: true } } },
+            include: {
+              user: { select: { id: true, name: true, avatarUpdatedAt: true } },
+            },
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
             take: 20,
             skip: (page - 1) * 20,
@@ -135,12 +139,19 @@ export async function socialRead(
           }),
         ]);
   return {
+    viewer: {
+      id: u.id,
+      name: u.name,
+      avatarUpdatedAt: u.avatarUpdatedAt?.toISOString() ?? null,
+    },
     liked: liked > 0,
     likeCount,
     commentCount,
     comments: comments.map((c) => ({
       id: c.id,
       name: c.user.name,
+      userId: c.user.id,
+      avatarUpdatedAt: c.user.avatarUpdatedAt?.toISOString() ?? null,
       text: c.text,
       createdAt: c.createdAt,
       own: c.userId === u.id,

@@ -77,7 +77,7 @@ export async function CommunityFeed({
     take: limit + 1,
     skip: (page - 1) * limit,
     include: {
-      author: { select: { name: true } },
+      author: { select: { id: true, name: true, avatarUpdatedAt: true } },
       redemptionShare: { select: { postId: true } },
       media: photoSelect(),
     },
@@ -101,6 +101,10 @@ export async function CommunityFeed({
           title={p.title}
           description={p.description}
           author={p.author.name}
+          authorId={p.author.id}
+          authorAvatarUpdatedAt={
+            p.author.avatarUpdatedAt?.toISOString() ?? null
+          }
           category={p.category}
           pinned={p.pinned}
           publishedAt={p.publishedAt?.toISOString() ?? ""}

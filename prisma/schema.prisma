@@ -20,6 +20,8 @@ enum OrderStatus {
 }
 
 model User {
+  avatarUpdatedAt DateTime?
+  profilePhoto ProfilePhoto?
   redemptionNotices RedemptionNotice[]
   redemptionRequests RedemptionRequest[]
   id                      String             @id @default(cuid())
@@ -478,4 +480,11 @@ model RedemptionNotice {
  createdAt DateTime @default(now())
  @@unique([userId,orderId])
  @@index([userId,readAt,createdAt])
+}
+
+model ProfilePhoto {
+ userId String @id
+ user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+ bytes Bytes
+ updatedAt DateTime @default(now()) @updatedAt
 }

@@ -1,4 +1,5 @@
 "use client";
+import { UserAvatar } from "./user-avatar";
 import { useState, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import {
@@ -15,6 +16,8 @@ export function FeedPost({
   title,
   description,
   author,
+  authorId,
+  authorAvatarUpdatedAt,
   category,
   pinned,
   publishedAt,
@@ -26,6 +29,8 @@ export function FeedPost({
   title: string;
   description: string;
   author: string;
+  authorId?: string;
+  authorAvatarUpdatedAt?: string | null;
   category: string;
   pinned: boolean;
   publishedAt: string;
@@ -79,14 +84,12 @@ export function FeedPost({
       <div className={styles.composition}>
         <div className={styles.copy}>
           <header className={styles.author}>
-            <span className={styles.avatar} aria-hidden="true">
-              {author
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((n) => n[0])
-                .join("")}
-            </span>
+            <UserAvatar
+              id={authorId}
+              name={author}
+              avatarUpdatedAt={authorAvatarUpdatedAt}
+              size={44}
+            />
             <div>
               <strong>{author}</strong>
               <time dateTime={publishedAt}>

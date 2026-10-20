@@ -1,0 +1,245 @@
+.menu {
+  position: relative;
+  flex-shrink: 0;
+}
+.menu > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 12px;
+  padding: 3px;
+  color: white;
+}
+.menu > summary::-webkit-details-marker {
+  display: none;
+}
+.triggerName {
+  display: grid;
+  max-width: 190px;
+  overflow: hidden;
+  text-align: left;
+}
+.triggerName strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.triggerName small {
+  font-size: 11px;
+  color: #c5d3e2;
+}
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 14px);
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  padding: 16px;
+  background: white;
+  color: #10283f;
+  border: 1px solid #e5eaf0;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px #071b3340;
+  z-index: 100;
+}
+.menuIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #eef0f3;
+  padding-bottom: 14px;
+  margin-bottom: 8px;
+}
+.menuIdentity > div {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+.menuIdentity strong,
+.menuIdentity span {
+  overflow-wrap: anywhere;
+}
+.menuIdentity span,
+.menuIdentity small {
+  font-size: 12px;
+  color: #5b6f86;
+}
+.dropdown > a,
+.dropdown form > button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px;
+  border: 0;
+  background: white;
+  border-radius: 8px;
+  color: #223b55;
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+}
+.dropdown > a:hover,
+.dropdown form > button:hover {
+  background: #fff3e0;
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 360px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.card {
+  background: white;
+  border: 1px solid #e5eaf0;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 4px 24px #162b4005;
+  min-width: 0;
+}
+.photo {
+  text-align: center;
+}
+.photo h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+.photo p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5b7089;
+}
+.buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 18px 0;
+}
+.info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin: 20px 0;
+}
+.item {
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #edf0f5;
+  border-radius: 12px;
+  min-width: 0;
+}
+.item dt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #60738d;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.item dd {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.crop {
+  position: relative;
+  width: 256px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  margin: 18px auto;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #edf1f5;
+  touch-action: none;
+  cursor: grab;
+  border: 3px solid #ff9900;
+}
+.crop:active {
+  cursor: grabbing;
+}
+.crop img {
+  position: absolute;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+.editor {
+  display: grid;
+  gap: 12px;
+  text-align: left;
+}
+.editor label {
+  font-size: 13px;
+  display: grid;
+  gap: 6px;
+}
+.editor input[type="range"] {
+  width: 100%;
+  accent-color: #ff9900;
+}
+.consent {
+  display: flex !important;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  line-height: 1.5;
+}
+.consent input {
+  width: auto;
+  min-height: auto;
+  margin-top: 3px;
+}
+.status {
+  padding: 10px;
+  border-radius: 8px;
+  background: #ecf7e7;
+  color: #39712d;
+  font-size: 13px;
+}
+.menu summary:focus-visible,
+.menu a:focus-visible,
+.menu button:focus-visible {
+  outline: 3px solid #ff9900;
+  outline-offset: 3px;
+}
+.password {
+  margin-top: 24px;
+  scroll-margin-top: 90px;
+}
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .info {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 768px) {
+  .triggerName {
+    display: none;
+  }
+  .menu > summary {
+    gap: 4px;
+  }
+  .dropdown {
+    width: 310px;
+  }
+}
+@media (max-width: 430px) {
+  .card {
+    padding: 18px;
+  }
+  .info {
+    grid-template-columns: 1fr;
+  }
+  .dropdown {
+    right: -2px;
+  }
+}
