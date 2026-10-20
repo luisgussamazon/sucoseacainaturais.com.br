@@ -85,6 +85,13 @@ export function Navigation({
               <ChartNoAxesCombined size={19} />
               Relatórios
             </Link>
+            <Link
+              className={`nav-link ${pathname.startsWith("/entregas") ? "active" : ""}`}
+              href="/entregas"
+            >
+              <PackageCheck size={19} />
+              Entrega de Produtos
+            </Link>
             {role === "ADMIN" && (
               <>
                 <Link

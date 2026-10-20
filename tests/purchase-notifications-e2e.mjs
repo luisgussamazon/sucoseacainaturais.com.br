@@ -296,9 +296,13 @@ export async function runPurchaseChecks({
       null,
     );
     const finance = await snapshot();
-    await staff.getByRole("checkbox").check();
     await staff
-      .getByRole("button", { name: "Confirmar retirada", exact: true })
+      .getByRole("complementary", { name: "Detalhes do pedido" })
+      .getByRole("button", { name: "Confirmar entrega", exact: true })
+      .click();
+    await staff
+      .getByRole("dialog")
+      .getByRole("button", { name: "Confirmar entrega", exact: true })
       .click();
     await staff
       .getByRole("status")
@@ -320,7 +324,7 @@ export async function runPurchaseChecks({
       },
     });
     assert.equal(again.status(), 409);
-    await manager.goto(base + "/resgates/conferir?notification=" + notice.id);
+    await manager.goto(base + "/entregas?notification=" + notice.id);
     assert.equal(
       await manager
         .getByRole("heading", { name: product.name, exact: true })

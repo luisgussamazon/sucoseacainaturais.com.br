@@ -255,13 +255,16 @@ try {
     0,
   );
   check("Quiz correto concede recompensa única");
-  await a.goto("http://localhost:3147/admin");
-  const orderRow = a.locator("tr:visible").filter({ hasText: order.id });
-  await orderRow.locator("select[name=status]").selectOption("CANCELLED");
-  await orderRow
-    .getByRole("button", { name: "Confirmar", exact: true })
+  await a.goto("http://localhost:3147/entregas?order=" + order.id);
+  await a
+    .getByRole("complementary", { name: "Detalhes do pedido" })
+    .getByRole("button", { name: "Cancelar pedido", exact: true })
     .click();
-  await a.waitForTimeout(500);
+  await a
+    .getByRole("dialog")
+    .getByRole("button", { name: "Confirmar cancelamento", exact: true })
+    .click();
+  await a.getByRole("status").filter({ hasText: "Pedido cancelado" }).waitFor();
   assert.equal(
     (await db.user.findUniqueOrThrow({ where: { id: employee.id } })).balance,
     120,
@@ -274,6 +277,11 @@ try {
   await e.goto("http://localhost:3147/loja");
   await e.getByRole("button", { name: "Resgatar", exact: true }).click();
   await e.getByRole("dialog").getByLabel("Quantidade do resgate").waitFor();
+  await e.waitForFunction(() =>
+    Array.from(
+      document.querySelectorAll('dialog[open] button[type="submit"]'),
+    ).some((b) => b.getClientRects().length > 0 && !b.disabled),
+  );
   await db.user.update({ where: { id: employee.id }, data: { balance: 0 } });
   await e
     .getByRole("dialog")
@@ -309,7 +317,15 @@ try {
     e.getByRole("button", { name: "Resgatar", exact: true }).click(),
     concurrent.getByRole("button", { name: "Resgatar", exact: true }).click(),
   ]);
-  await Promise.all([e,concurrent].map(p=>p.waitForFunction(()=>Array.from(document.querySelectorAll('dialog[open] button')).some(b=>b.textContent==="Confirmar resgate"&&!b.disabled))));
+  await Promise.all(
+    [e, concurrent].map((p) =>
+      p.waitForFunction(() =>
+        Array.from(document.querySelectorAll("dialog[open] button")).some(
+          (b) => b.textContent === "Confirmar resgate" && !b.disabled,
+        ),
+      ),
+    ),
+  );
   await Promise.all([
     e
       .getByRole("dialog")

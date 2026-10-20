@@ -1,17 +1,12 @@
 import { PasswordManagement } from "@/components/management";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { createUser, updateUser, updateOrder } from "@/lib/actions";
+import { createUser, updateUser } from "@/lib/actions";
 import { PageTitle, Field, date } from "@/components/ui";
 export default async function Admin() {
   const actor = await requireRole(["ADMIN"]);
-  const [users, orders, audits] = await Promise.all([
+  const [users, audits] = await Promise.all([
     db.user.findMany({ orderBy: { name: "asc" } }),
-    db.order.findMany({
-      include: { user: true, product: true },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
     db.audit.findMany({ orderBy: { createdAt: "desc" }, take: 100 }),
   ]);
   return (
@@ -19,7 +14,7 @@ export default async function Admin() {
       <PageTitle
         eyebrow="CONTROLE E TRANSPARÊNCIA"
         title="Administração"
-        description="Gerencie acessos, acompanhe pedidos e consulte a trilha de auditoria."
+        description="Gerencie acessos e consulte a trilha de auditoria."
       />
       <section className="panel">
         <h2>Usuários e permissões</h2>
@@ -90,50 +85,6 @@ export default async function Admin() {
           </label>
           <button className="button">Criar acesso</button>
         </form>
-      </section>
-      <section className="panel">
-        <h2>Pedidos · últimos 100</h2>
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Pedido / pessoa</th>
-                <th>Produto</th>
-                <th>Quantidade</th>
-                <th>Status / ação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((o) => (
-                <tr key={o.id}>
-                  <td>
-                    <code>{o.id}</code>
-                    <br />
-                    {o.user.name}
-                  </td>
-                  <td>{o.product.name}</td>
-                  <td>{o.quantity}</td>
-                  <td>
-                    {o.status === "RESERVED" ? (
-                      <form action={updateOrder} className="inline-form">
-                        <input type="hidden" name="orderId" value={o.id} />
-                        <select name="status" aria-label="Atualizar pedido">
-                          <option value="COLLECTED">Confirmar retirada</option>
-                          <option value="CANCELLED">Cancelar e estornar</option>
-                        </select>
-                        <button className="button compact">Confirmar</button>
-                      </form>
-                    ) : o.status === "COLLECTED" ? (
-                      "Retirado"
-                    ) : (
-                      "Cancelado"
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </section>
       <section className="panel">
         <h2>Auditoria · últimos 100 eventos</h2>

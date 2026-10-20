@@ -313,7 +313,7 @@ export function RedemptionCenter({
         </div>
       )}
       {canConfirm && (
-        <Link className={styles.staffLink} href="/resgates/conferir">
+        <Link className={styles.staffLink} href="/entregas">
           <ShieldCheck size={19} /> Conferir comprovante e confirmar retirada
           (RH)
         </Link>

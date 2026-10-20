@@ -20,19 +20,30 @@ export async function GET() {
       { error: "Entre novamente." },
       { status: 401, headers },
     );
-  const orders = await db.order.findMany({
-    where: { userId: actor.id },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-    select: {
-      id: true,
-      status: true,
-      collectedAt: true,
-      cancelledAt: true,
-      share: { select: { postId: true } },
-    },
-  });
-  return Response.json(orders, { headers });
+  const where = { userId: actor.id };
+  const [orders, counts, shares, publications] = await Promise.all([
+    db.order.aggregate({
+      where,
+      _count: { _all: true },
+      _max: { createdAt: true, collectedAt: true, cancelledAt: true },
+    }),
+    db.order.groupBy({
+      by: ["status"],
+      where,
+      _count: { _all: true },
+      orderBy: { status: "asc" },
+    }),
+    db.redemptionShare.aggregate({
+      where: { order: where },
+      _count: { _all: true },
+      _max: { createdAt: true },
+    }),
+    db.communityPost.aggregate({
+      where: { redemptionShare: { order: where } },
+      _max: { updatedAt: true },
+    }),
+  ]);
+  return Response.json({ orders, counts, shares, publications }, { headers });
 }
 async function attempt(actorId: string) {
   const n = await serial(async (tx) => {

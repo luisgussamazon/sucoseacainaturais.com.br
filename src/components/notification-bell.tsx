@@ -100,9 +100,7 @@ export function NotificationBell() {
       await load();
       if (visit) {
         setOpen(false);
-        router.push(
-          "/resgates/conferir?notification=" + encodeURIComponent(id),
-        );
+        router.push("/entregas?notification=" + encodeURIComponent(id));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha na operação.");
