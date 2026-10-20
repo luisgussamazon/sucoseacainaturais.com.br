@@ -633,6 +633,9 @@ export async function POST(
       message = "Fotos e capa atualizadas.";
     } else if (action === "submit") {
       const photoMissionId = text(f, "photoMissionId");
+      const caption = String(f.get("caption") ?? "").trim();
+      if (caption.length > 1000)
+        throw new CommunityError("A legenda deve ter até 1.000 caracteres.");
       const config = await db.photoMission.findUniqueOrThrow({
         where: { id: photoMissionId },
       });
@@ -679,6 +682,7 @@ export async function POST(
                 reviewedAt: null,
                 reviewerId: null,
                 reason: null,
+                caption: caption || null,
                 shareConsent: flag(f, "shareConsent"),
               },
             })
@@ -686,6 +690,7 @@ export async function POST(
               data: {
                 photoMissionId,
                 userId: u.id,
+                caption: caption || null,
                 shareConsent: flag(f, "shareConsent"),
               },
             });
@@ -698,10 +703,49 @@ export async function POST(
             expiresAt: new Date(Date.now() + 90 * 86400000),
           })),
         });
+        if (flag(f, "shareConsent")) {
+          const album = await tx.communityAlbum.create({
+            data: {
+              title: "Missão: " + pm.mission.title,
+              description: caption || "Participação em missão da equipe.",
+              eventDate: now,
+              status: "PUBLISHED",
+              visibility: "INTERNAL",
+              authorId: u.id,
+              category: "Missões com foto",
+              imageAuthorization: true,
+              restrictedChecked: true,
+            },
+          });
+          // Only explicitly consented, sanitized copies are public internally.
+          // Original evidence stays private and its reward review is unchanged.
+          await tx.communityMedia.createMany({
+            data: photos.map((m) => ({
+              ...m,
+              ownerId: u.id,
+              albumId: album.id,
+              expiresAt: new Date(now.getTime() + 90 * 86400000),
+            })),
+          });
+          await tx.missionMoment.create({
+            data: { evidenceId: e.id, attempt: e.attempts, albumId: album.id },
+          });
+          await audit(
+            tx,
+            u,
+            "MISSION_MOMENT_PUBLISHED",
+            JSON.stringify({
+              evidenceId: e.id,
+              attempt: e.attempts,
+              albumId: album.id,
+            }),
+          );
+        }
         await audit(tx, u, "PHOTO_SUBMITTED", e.id);
       });
-      message =
-        "Fotografias enviadas. Sua participação está em análise; a recompensa depende da aprovação.";
+      message = flag(f, "shareConsent")
+        ? "Sua evidência foi enviada com sucesso e já apareceu em Momentos VBJ2. A recompensa continua em análise."
+        : "Evidência enviada em caráter privado, sem publicação em Momentos VBJ2. A recompensa continua em análise.";
     } else if (action === "cancel") {
       const id = text(f, "id");
       await serial(async (tx) => {

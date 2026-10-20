@@ -20,12 +20,14 @@ export function CommunityForm({
   label = "Salvar",
   reset = false,
   composer = false,
+  onSuccess,
 }: {
   action: string;
   children: React.ReactNode;
   label?: string;
   reset?: boolean;
   composer?: boolean;
+  onSuccess?: (message: string) => void;
 }) {
   const [pending, setPending] = useState(false),
     [message, setMessage] = useState(""),
@@ -71,6 +73,7 @@ export function CommunityForm({
       );
       setError(false);
       setMessage(result.message);
+      onSuccess?.(result.message);
       form.dispatchEvent(new Event("community:saved"));
       if (reset) form.reset();
       updated();

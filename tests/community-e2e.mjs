@@ -399,12 +399,15 @@ export async function runCommunityChecks({
       },
     });
     await e.page.goto(base + "/missoes");
-    const quizCard = e.page.locator(".mission-card:visible").filter({
+    const quizCard = e.page.locator("article:visible").filter({
       has: e.page.getByRole("heading", {
         name: "Quiz de isolamento QA",
         exact: true,
       }),
     });
+    await quizCard
+      .getByRole("button", { name: "Responder quiz", exact: true })
+      .click();
     await quizCard
       .locator("input[name=missionId]")
       .evaluate((el, id) => (el.value = id), pm.missionId);
@@ -691,7 +694,7 @@ export async function runCommunityChecks({
     }
     await e.page.goto(base + "/missoes");
     await e.page
-      .getByRole("heading", { name: "Missões com foto", exact: true })
+      .getByRole("heading", { name: "Missões ativas", exact: true })
       .waitFor();
     const expired = await db.communityMedia.create({
       data: {

@@ -229,6 +229,7 @@ try {
   assert.equal(order.allocations[0].batchId, early.id);
   check("Resgate debita saldo e usa FEFO sem lotes vencidos");
   await e.goto("http://localhost:3147/missoes");
+  await e.getByRole("button", { name: "Responder quiz", exact: true }).click();
   await e.locator('input[name=answer][value="1"]:visible').check();
   await e.getByRole("button", { name: "Enviar resposta" }).click();
   await e.waitForURL("**/missoes?error=mission");
@@ -237,6 +238,7 @@ try {
     70,
   );
   check("Resposta incorreta não concede recompensa");
+  await e.getByRole("button", { name: "Responder quiz", exact: true }).click();
   await e.locator('input[name=answer][value="0"]:visible').check();
   await e.getByRole("button", { name: "Enviar resposta" }).click();
   await e.waitForURL("**/missoes?success=1");

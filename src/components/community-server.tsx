@@ -320,7 +320,21 @@ export async function CommunityMoments({
     orderBy: { eventDate: "desc" },
     take: recent ? 1 : 12,
     skip: recent ? 0 : (page - 1) * 12,
-    include: { media: photoSelect() },
+    include: {
+      media: photoSelect(),
+      author: { select: { id: true, name: true, avatarUpdatedAt: true } },
+      missionMoment: {
+        select: {
+          evidence: {
+            select: {
+              photoMission: {
+                select: { mission: { select: { title: true } } },
+              },
+            },
+          },
+        },
+      },
+    },
   });
   const approvedAlbums = new Set(
     (
@@ -380,7 +394,15 @@ export async function CommunityMoments({
               title={a.title}
               interactive
             />
-            <span className="badge">{a.category}</span>
+            <span className="badge">
+              {a.missionMoment
+                ? "Missão: " +
+                  a.missionMoment.evidence.photoMission.mission.title
+                : a.category}
+            </span>
+            <p className="muted">
+              {a.author.name} · {date(a.eventDate)}
+            </p>
             <h2>{a.title}</h2>
             <small>
               {date(a.eventDate)} ·{" "}
@@ -449,6 +471,67 @@ export async function MyRecognitionConsent({ user }: { user: Actor }) {
               interno.
             </label>
           </CommunityForm>
+        </details>
+      ))}
+    </section>
+  );
+}
+
+export async function MyPhotoParticipationHistory({ user }: { user: Actor }) {
+  const entries = await db.photoEvidence.findMany({
+    where: { userId: user.id },
+    include: {
+      photoMission: { include: { mission: { select: { title: true } } } },
+      media: {
+        where: { expiresAt: { gt: new Date() } },
+        select: { id: true, attempt: true },
+      },
+      reviews: { orderBy: { createdAt: "desc" }, take: 5 },
+    },
+    orderBy: { submittedAt: "desc" },
+    take: 50,
+  });
+  if (!entries.length)
+    return (
+      <p className="muted">
+        Você ainda não enviou participações em missões com foto.
+      </p>
+    );
+  const labels = {
+    PENDING: "Em análise",
+    APPROVED: "Aprovada",
+    REJECTED: "Reprovada",
+    CANCELLED: "Cancelada",
+  };
+  return (
+    <section className="panel">
+      <h2>Minhas participações em missões com foto</h2>
+      <p>
+        Seu histórico privado de participação e avaliação. Somente as fotos
+        autorizadas para divulgação são publicadas na comunidade.
+      </p>
+      {entries.map((e) => (
+        <details key={e.id}>
+          <summary>
+            {e.photoMission.mission.title} · {labels[e.status]} ·{" "}
+            {date(e.submittedAt)}
+          </summary>
+          {e.caption && <p>{e.caption}</p>}
+          <PhotoGallery
+            photos={e.media.filter((m) => m.attempt === e.attempts)}
+            title="Minhas evidências privadas"
+          />
+          {e.reason && <p>Motivo da avaliação: {e.reason}</p>}
+          {e.reviews.map((r) => (
+            <p key={r.id}>
+              {date(r.createdAt)} · {labels[r.status]} · {r.reason ?? ""}
+            </p>
+          ))}
+          {e.status === "PENDING" && (
+            <CommunityForm action="cancel" label="Cancelar participação">
+              <input type="hidden" name="id" value={e.id} />
+            </CommunityForm>
+          )}
         </details>
       ))}
     </section>

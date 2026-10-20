@@ -232,6 +232,7 @@ model CommunityEvent {
 }
 
 model CommunityAlbum {
+  missionMoment MissionMoment?
   category           String              @default("Eventos")
   imageAuthorization Boolean?
   restrictedChecked  Boolean?
@@ -340,6 +341,8 @@ model PhotoMission {
 }
 
 model PhotoEvidence {
+  caption String?
+  moments MissionMoment[]
   id             String           @id @default(cuid())
   photoMissionId String
   photoMission   PhotoMission     @relation(fields: [photoMissionId], references: [id])
@@ -505,4 +508,15 @@ model CommunityCommentLike {
  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
  createdAt DateTime @default(now())
  @@id([commentId, userId])
+}
+
+model MissionMoment {
+ id String @id @default(cuid())
+ evidenceId String
+ evidence PhotoEvidence @relation(fields:[evidenceId],references:[id],onDelete:Restrict)
+ attempt Int
+ albumId String @unique
+ album CommunityAlbum @relation(fields:[albumId],references:[id],onDelete:Restrict)
+ createdAt DateTime @default(now())
+ @@unique([evidenceId,attempt])
 }
