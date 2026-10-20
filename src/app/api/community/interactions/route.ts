@@ -19,13 +19,17 @@ export async function GET(request: Request) {
       kind = p.get("kind") ?? "POST";
     if (!["POST", "ALBUM", "PHOTO"].includes(kind))
       throw new CommunityError("Conteúdo inválido.");
-    const page = Math.max(1, Math.min(100, Number(p.get("page")) || 1));
+    const page = Math.max(
+      1,
+      Math.min(1000000, Math.floor(Number(p.get("page"))) || 1),
+    );
     return Response.json(
       await socialRead(
         kind as TargetKind,
         p.get("targetId") ?? "",
         actor,
         page,
+        p.get("parentId") ?? undefined,
       ),
       { headers },
     );

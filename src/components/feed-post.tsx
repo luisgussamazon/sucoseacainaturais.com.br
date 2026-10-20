@@ -181,17 +181,19 @@ export function FeedPost({
         </div>
       </details>
       <div className={styles.interactions}>
-        {photo && (
-          <button
-            className={styles.download}
-            disabled={pending}
-            onClick={download}
-          >
-            <Download size={18} />
-            {pending ? "Baixando…" : "Baixar foto"}
-          </button>
-        )}
-        <SocialInteractions kind="POST" targetId={id} composerAlways />
+        <SocialInteractions
+          kind="POST"
+          targetId={id}
+          composerAlways
+          downloadAction={
+            photo ? (
+              <button disabled={pending} onClick={download}>
+                <Download size={19} />
+                {pending ? "Baixando…" : "Baixar foto"}
+              </button>
+            ) : null
+          }
+        />
       </div>
       {error && <p role="alert">{error}</p>}
       <dialog

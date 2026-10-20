@@ -20,6 +20,7 @@ enum OrderStatus {
 }
 
 model User {
+  commentLikes CommunityCommentLike[]
   avatarUpdatedAt DateTime?
   profilePhoto ProfilePhoto?
   redemptionNotices RedemptionNotice[]
@@ -295,6 +296,14 @@ model CommunityLike {
 }
 
 model CommunityComment {
+  parentId String?
+  parent CommunityComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Restrict)
+  replies CommunityComment[] @relation("CommentReplies")
+  replyToId String?
+  replyTo CommunityComment? @relation("CommentReplyTarget", fields: [replyToId], references: [id], onDelete: Restrict)
+  mentions CommunityComment[] @relation("CommentReplyTarget")
+  likes CommunityCommentLike[]
+  @@index([postId, parentId, createdAt, id])
   requestId        String?       @unique
   deletedAt        DateTime?
   id               String        @id @default(cuid())
@@ -487,4 +496,13 @@ model ProfilePhoto {
  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
  bytes Bytes
  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model CommunityCommentLike {
+ commentId String
+ comment CommunityComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+ userId String
+ user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+ createdAt DateTime @default(now())
+ @@id([commentId, userId])
 }

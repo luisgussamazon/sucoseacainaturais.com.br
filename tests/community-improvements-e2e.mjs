@@ -203,6 +203,10 @@ export async function runImprovementChecks({
       .fill("Álbum criado pelo seletor real com duas fotografias autorizadas.");
     await form.locator("select[name=status]").selectOption("PUBLISHED");
     await form.getByLabel("Categoria do álbum").selectOption("Eventos");
+    // Keep this isolated fixture newer than albums from preceding scenarios.
+    await form
+      .locator("[name=eventDate]")
+      .fill(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
     const file = (n) => ({
       name: n + ".png",
       mimeType: "image/png",

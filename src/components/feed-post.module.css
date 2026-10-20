@@ -184,24 +184,7 @@
   color: #e43b78;
   animation: pulse 0.25s ease;
 }
-.post :global(.social-interactions form) {
-  display: flex;
-  gap: 12px;
-  align-items: end;
-  margin-top: 12px;
-}
-.post :global(.social-interactions form .field) {
-  flex: 1;
-  min-width: 0;
-}
-.post :global(.social-interactions textarea) {
-  min-height: 44px;
-  height: 44px;
-  resize: vertical;
-}
-.post :global(.social-interactions form .button) {
-  min-height: 44px;
-}
+
 .modal {
   border: 0;
   border-radius: 16px;
@@ -270,12 +253,7 @@
   .download {
     float: none;
   }
-  .post :global(.social-interactions form) {
-    flex-wrap: wrap;
-  }
-  .post :global(.social-interactions form .field) {
-    flex-basis: 100%;
-  }
+
   .photo img {
     max-height: none;
   }
@@ -306,4 +284,77 @@
 .post :global(.social-interactions) {
   border-top: 0;
   padding-top: 0;
+}
+
+/* Vertical social publication shared by Home and Mural. */
+.post {
+  width: 100%;
+  margin-inline: auto;
+}
+.composition {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.author {
+  padding-right: 32px;
+  margin-bottom: 12px;
+}
+.author strong {
+  font-size: 18px;
+}
+.author > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.author time {
+  font-size: 13px;
+}
+.category {
+  background: #e9f3ff;
+  color: #0670cf;
+}
+.summary,
+.full {
+  color: #172c43;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.media {
+  width: 100%;
+  position: relative;
+}
+.photo img.foreground {
+  max-height: 780px;
+}
+.options {
+  right: 20px;
+  top: 24px;
+}
+.interactions {
+  margin-top: 8px;
+  border-top: 0;
+  padding-top: 0;
+}
+@media (max-width: 480px) {
+  .post {
+    padding: 12px;
+  }
+  .author strong {
+    font-size: 14px;
+  }
+  .author time {
+    font-size: 11px;
+  }
+  .summary,
+  .full {
+    font-size: 14px;
+  }
+  .options {
+    top: 14px;
+    right: 10px;
+  }
+  .photo img.foreground {
+    max-height: none;
+  }
 }

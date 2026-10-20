@@ -401,7 +401,13 @@ export async function POST(
       message =
         "Conteúdo salvo. Rascunhos e arquivos permanecem fora do mural.";
     } else if (
-      ["like", "comment", "delete-comment", "moderate"].includes(action)
+      [
+        "like",
+        "comment",
+        "comment-like",
+        "delete-comment",
+        "moderate",
+      ].includes(action)
     ) {
       message = await socialMutation(action, f, u);
     } else if (action === "photo-mission") {

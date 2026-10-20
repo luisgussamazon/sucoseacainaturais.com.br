@@ -1,18 +1,18 @@
 import assert from "node:assert/strict";
 import sharp from "sharp";
 import { writeFileSync } from "node:fs";
-export async function runFeedChecks({
-  db,
-  browser,
-  admin,
-  employee,
-  login,
-  check,
-}) {
+export async function runFeedChecks({ db, browser, admin, login, check }) {
   const base = "http://localhost:3147",
     ctx = await browser.newContext(),
     p = await ctx.newPage();
   try {
+    const employee = await db.user.create({
+      data: {
+        name: "Colaborador Interações QA",
+        email: "interacoes-" + Date.now() + "@qa.invalid",
+        passwordHash: admin.passwordHash,
+      },
+    });
     await login(p, employee.email);
     const post = await db.communityPost.create({
       data: {
@@ -57,6 +57,47 @@ export async function runFeedChecks({
     assert.equal((await guest.request.get(url(media[0].id))).status(), 401);
     await guest.close();
     check("Download exige autenticação");
+    await db.mission.create({
+      data: {
+        title: "Evidência privada QA isolada",
+        description: "Validação de segurança",
+        reward: 1,
+        question: "QA?",
+        options: ["Sim"],
+        answer: 0,
+        endsAt: new Date(Date.now() + 86400000),
+        photoConfig: {
+          create: {
+            category: "Sustentabilidade",
+            startsAt: new Date(0),
+            reviewerId: admin.id,
+            media: {
+              create: {
+                ownerId: employee.id,
+                bytes: media[0].bytes,
+                width: 800,
+                height: 500,
+                expiresAt: new Date(Date.now() + 86400000),
+              },
+            },
+            evidence: {
+              create: {
+                userId: employee.id,
+                media: {
+                  create: {
+                    ownerId: employee.id,
+                    bytes: media[0].bytes,
+                    width: 800,
+                    height: 500,
+                    expiresAt: new Date(Date.now() + 86400000),
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
     const protectedPhotos = await db.communityMedia.findMany({
       where: {
         OR: [{ evidenceId: { not: null } }, { photoMissionId: { not: null } }],
@@ -124,27 +165,87 @@ export async function runFeedChecks({
         .count(),
       1,
     );
-    const like = card.getByRole("button", { name: "♡ Curtir", exact: true });
+    const like = card.getByRole("button", { name: "Curtir", exact: true });
     await like.waitFor();
     await p.waitForFunction(() =>
       [...document.querySelectorAll("button")].some(
-        (b) => b.textContent.includes("♡ Curtir") && !b.disabled,
+        (b) => b.getAttribute("aria-label") === "Curtir" && !b.disabled,
       ),
     );
     await like.click();
     await card
-      .getByRole("button", { name: "♥ Descurtir", exact: true })
+      .getByRole("button", { name: "Descurtir", exact: true })
       .waitFor();
     await card
-      .getByPlaceholder("Escreva um comentário...")
-      .fill("Comentário QA isolado");
+      .getByText(employee.name + " curtiu isso", { exact: true })
+      .waitFor();
+    const social = await ctx.request.get(
+        base + "/api/community/interactions?kind=POST&targetId=" + post.id,
+      ),
+      socialData = await social.json();
+    assert.equal(socialData.likers[0].name, employee.name);
+    assert.equal(socialData.likers[0].id, employee.id);
+    assert.equal(socialData.viewerName, employee.name);
+    const actions = card.getByRole("button", {
+      name: "Comentários",
+      exact: true,
+    });
+    const likeBox = await card
+        .getByRole("button", { name: "Descurtir", exact: true })
+        .boundingBox(),
+      commentBox = await actions.boundingBox(),
+      downloadBox = await card
+        .getByRole("button", { name: "Baixar foto", exact: true })
+        .boundingBox();
+    assert.ok(
+      Math.abs(likeBox.y - commentBox.y) < 2 &&
+        Math.abs(commentBox.y - downloadBox.y) < 2,
+    );
+    assert.ok(downloadBox.x > commentBox.x);
+    check("Curtidas mostram nomes reais e ações ficam na mesma linha");
+    const input = card.getByPlaceholder("Escreva um comentário...");
+    await input.fill("Antes depois");
+    await input.evaluate((el) => {
+      el.focus();
+      el.setSelectionRange(6, 6);
+      el.dispatchEvent(new Event("select", { bubbles: true }));
+    });
+    await card.getByRole("button", { name: "Selecionar emoji" }).click();
+    await card.getByRole("button", { name: "Inserir 🌱", exact: true }).click();
+    assert.equal(await input.inputValue(), "Antes 🌱depois");
+    await input.evaluate((el) => {
+      el.setSelectionRange(0, 5);
+      el.dispatchEvent(new Event("select", { bubbles: true }));
+    });
+    await card.getByRole("button", { name: "Selecionar emoji" }).click();
+    await card.getByRole("button", { name: "Inserir ❤️", exact: true }).click();
+    assert.equal(await input.inputValue(), "❤️ 🌱depois");
+    await card.getByRole("button", { name: "Selecionar emoji" }).click();
+    await p.keyboard.press("Escape");
+    assert.equal(
+      await card
+        .getByRole("button", { name: "Selecionar emoji" })
+        .getAttribute("aria-expanded"),
+      "false",
+    );
+    check("Emojis respeitam cursor, substituem seleção e fecham por Escape");
+    await input.fill("Comentário QA isolado 🌱");
+    const published = p.waitForResponse(
+      (r) =>
+        r.url().endsWith("/api/community/comment") &&
+        r.request().method() === "POST",
+    );
+    await card.getByRole("button", { name: "Publicar", exact: true }).click();
+    const response = await published;
+    assert.equal(response.status(), 200, await response.text());
     await card
-      .getByRole("button", { name: "Enviar comentário", exact: true })
-      .click();
-    await card.getByText("Comentário QA isolado", { exact: true }).waitFor();
+      .locator(".community-comment")
+      .getByText("Comentário QA isolado 🌱", { exact: true })
+      .waitFor();
+    await card.getByLabel("Opções do comentário").click();
     await card.getByRole("button", { name: "Excluir meu comentário" }).click();
     await p.waitForFunction(
-      () => !document.body.innerText.includes("Comentário QA isolado"),
+      () => !document.body.innerText.includes("Comentário QA isolado 🌱"),
     );
     check(
       "Curtir, expandir descrição, comentar e excluir comentário funcionam",
@@ -180,6 +281,30 @@ export async function runFeedChecks({
         true,
         "Overflow " + width,
       );
+      const controls = card.getByRole("button", {
+        name: "Comentários",
+        exact: true,
+      });
+      await controls.scrollIntoViewIfNeeded();
+      const a = await controls.boundingBox(),
+        b = await card
+          .getByRole("button", { name: "Baixar foto", exact: true })
+          .boundingBox();
+      assert.ok(Math.abs(a.y - b.y) < 2, "Actions wrap " + width);
+      await input.scrollIntoViewIfNeeded();
+      await card.getByRole("button", { name: "Selecionar emoji" }).click();
+      const popup = card.getByRole("group", { name: "Emojis" });
+      await popup.waitFor();
+      const bounds = await popup.boundingBox();
+      assert.ok(
+        bounds.x >= 0 && bounds.x + bounds.width <= width,
+        "Emoji overflow " + width,
+      );
+      await p.keyboard.press("Escape");
+      if ([390, 1920].includes(width))
+        await card
+          .locator('[aria-label="Interações da publicação"]')
+          .screenshot({ path: ".setup/mural-interactions-" + width + ".png" });
       if ([390, 1920].includes(width))
         await p.screenshot({ path: ".setup/social-feed-" + width + ".png" });
     }
@@ -190,6 +315,23 @@ export async function runFeedChecks({
       0,
     );
     check("Feed sem Compartilhar e sem overflow em seis larguras");
+  } catch (error) {
+    await p
+      .screenshot({ path: ".setup/interactions-failure.png", fullPage: true })
+      .catch(() => {});
+    console.log(
+      "Composer diagnostic:",
+      await p
+        .locator('[aria-label="Selecionar emoji"]')
+        .evaluateAll((els) =>
+          els.map((el) => ({
+            expanded: el.getAttribute("aria-expanded"),
+            visible: !!el.getClientRects().length,
+          })),
+        )
+        .catch(() => []),
+    );
+    throw error;
   } finally {
     await ctx.close();
   }

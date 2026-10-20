@@ -1,4 +1,5 @@
-﻿"use client";
+"use client";
+import { MuralSocial } from "./mural-social";
 import { UserAvatar, type AvatarIdentity } from "./user-avatar";
 import {
   FormEvent,
@@ -360,6 +361,21 @@ export function PhotoUpload({
     </div>
   );
 }
+export function SocialInteractions(props: {
+  kind: "POST" | "ALBUM" | "PHOTO";
+  targetId: string;
+  composerAlways?: boolean;
+  downloadAction?: React.ReactNode;
+}) {
+  if (props.kind === "POST")
+    return (
+      <MuralSocial
+        targetId={props.targetId}
+        downloadAction={props.downloadAction}
+      />
+    );
+  return <LegacySocialInteractions {...props} />;
+}
 type SocialData = {
   viewer: AvatarIdentity;
   liked: boolean;
@@ -377,7 +393,7 @@ type SocialData = {
   canModerate: boolean;
   page: number;
 };
-export function SocialInteractions({
+function LegacySocialInteractions({
   kind,
   targetId,
   composerAlways = false,

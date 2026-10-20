@@ -1,4 +1,5 @@
-﻿import { Prisma } from "@prisma/client";
+import { muralRead } from "./mural-social";
+import { Prisma } from "@prisma/client";
 import { db } from "./db";
 import {
   Actor,
@@ -84,66 +85,37 @@ export async function socialRead(
   id: string,
   u: Actor,
   page = 1,
+  parentId?: string,
 ) {
+  if (kind === "POST") return muralRead(id, u, page, parentId);
   await targetAllowed(kind, id, u);
-  const t =
-    kind === "POST"
-      ? null
-      : await db.communityThread.findUnique({
-          where: kind === "ALBUM" ? { albumId: id } : { mediaId: id },
-        });
-  const where =
-    kind === "POST" ? { postId: id } : { threadId: t?.id ?? "none" };
-  const [likeCount, liked, comments, commentCount] =
-    kind === "POST"
-      ? await Promise.all([
-          db.communityLike.count({ where: { postId: id } }),
-          db.communityLike.count({ where: { postId: id, userId: u.id } }),
-          db.communityComment.findMany({
-            where: { postId: id, hidden: false, deletedAt: null },
-            include: {
-              user: { select: { id: true, name: true, avatarUpdatedAt: true } },
-            },
-            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-            take: 20,
-            skip: (page - 1) * 20,
-          }),
-          db.communityComment.count({
-            where: { postId: id, hidden: false, deletedAt: null },
-          }),
-        ])
-      : await Promise.all([
-          db.mediaLike.count({ where: { threadId: t?.id ?? "none" } }),
-          db.mediaLike.count({
-            where: { threadId: t?.id ?? "none", userId: u.id },
-          }),
-          db.mediaComment.findMany({
-            where: {
-              threadId: t?.id ?? "none",
-              hidden: false,
-              deletedAt: null,
-            },
-            include: {
-              user: { select: { id: true, name: true, avatarUpdatedAt: true } },
-            },
-            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-            take: 20,
-            skip: (page - 1) * 20,
-          }),
-          db.mediaComment.count({
-            where: {
-              threadId: t?.id ?? "none",
-              hidden: false,
-              deletedAt: null,
-            },
-          }),
-        ]);
+  const t = await db.communityThread.findUnique({
+    where: kind === "ALBUM" ? { albumId: id } : { mediaId: id },
+  });
+  const where = { threadId: t?.id ?? "none" };
+  const [likeCount, liked, comments, commentCount] = await Promise.all([
+    db.mediaLike.count({ where }),
+    db.mediaLike.count({ where: { ...where, userId: u.id } }),
+    db.mediaComment.findMany({
+      where: { ...where, hidden: false, deletedAt: null },
+      include: {
+        user: { select: { id: true, name: true, avatarUpdatedAt: true } },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 20,
+      skip: (page - 1) * 20,
+    }),
+    db.mediaComment.count({
+      where: { ...where, hidden: false, deletedAt: null },
+    }),
+  ]);
   return {
     viewer: {
       id: u.id,
       name: u.name,
       avatarUpdatedAt: u.avatarUpdatedAt?.toISOString() ?? null,
     },
+    likers: [],
     liked: liked > 0,
     likeCount,
     commentCount,
@@ -163,7 +135,7 @@ export async function socialRead(
 export async function socialMutation(action: string, f: FormData, u: Actor) {
   const { kind, id } = targetInput(f);
   await serial(async (tx) => {
-    if (action === "like" || action === "comment")
+    if (["like", "comment", "comment-like"].includes(action))
       await targetAllowed(kind, id, u, tx);
     if (action === "like") {
       if (kind === "POST") {
@@ -193,6 +165,26 @@ export async function socialMutation(action: string, f: FormData, u: Actor) {
       return;
     }
     if (action === "comment") {
+      let parentId: string | null = null;
+      let replyToId: string | null = null;
+      const replyTarget = optional(f, "replyToId");
+      if (replyTarget) {
+        if (kind !== "POST") throw new CommunityError("Resposta inválida.");
+        const target = await tx.communityComment.findUnique({
+          where: { id: replyTarget },
+          include: { parent: true },
+        });
+        if (
+          !target ||
+          target.postId !== id ||
+          target.hidden ||
+          target.deletedAt ||
+          (target.parent && (target.parent.hidden || target.parent.deletedAt))
+        )
+          throw new CommunityError("Comentário indisponível.", 404);
+        parentId = target.parentId ?? target.id;
+        replyToId = target.id;
+      }
       const body = text(f, "text", 1, 1000),
         requestId = optional(f, "requestId");
       if (requestId && requestId.length > 100)
@@ -204,7 +196,13 @@ export async function socialMutation(action: string, f: FormData, u: Actor) {
             : await tx.mediaComment.findUnique({ where: { requestId } })
           : null;
       if (existing) {
-        if (existing.userId !== u.id)
+        if (
+          existing.text !== body ||
+          existing.userId !== u.id ||
+          ("postId" in existing
+            ? existing.postId !== id || existing.replyToId !== replyToId
+            : existing.threadId !== (await thread(kind, id, tx)).id)
+        )
           throw new CommunityError("Envio inválido.", 403);
         return;
       }
@@ -233,7 +231,14 @@ export async function socialMutation(action: string, f: FormData, u: Actor) {
         )
           throw new CommunityError("Este comentário já foi enviado.");
         await tx.communityComment.create({
-          data: { postId: id, userId: u.id, text: body, requestId },
+          data: {
+            postId: id,
+            userId: u.id,
+            text: body,
+            requestId,
+            parentId,
+            replyToId,
+          },
         });
       } else {
         const t = await thread(kind, id, tx);
@@ -261,6 +266,40 @@ export async function socialMutation(action: string, f: FormData, u: Actor) {
         : await tx.mediaComment.findUnique({ where: { id: commentId } });
     if (!c || c.deletedAt)
       throw new CommunityError("Comentário indisponível.", 404);
+    if (kind === "POST") {
+      if (!("postId" in c) || (id && c.postId !== id))
+        throw new CommunityError("Comentário indisponível.", 404);
+      await targetAllowed(kind, c.postId, u, tx);
+    } else {
+      if (!("threadId" in c))
+        throw new CommunityError("Comentário indisponível.", 404);
+      const t = await tx.communityThread.findUnique({
+        where: { id: c.threadId },
+      });
+      const actual = kind === "ALBUM" ? t?.albumId : t?.mediaId;
+      if (!actual || (id && id !== actual))
+        throw new CommunityError("Comentário indisponível.", 404);
+      await targetAllowed(kind, actual, u, tx);
+    }
+    if (action === "comment-like") {
+      if (kind !== "POST" || c.hidden)
+        throw new CommunityError("Comentário indisponível.", 404);
+      const root =
+        "parentId" in c && c.parentId
+          ? await tx.communityComment.findUnique({ where: { id: c.parentId } })
+          : null;
+      if (root && (root.hidden || root.deletedAt))
+        throw new CommunityError("Comentário indisponível.", 404);
+      const where = { commentId, userId: u.id };
+      if (flag(f, "liked"))
+        await tx.communityCommentLike.upsert({
+          where: { commentId_userId: where },
+          create: where,
+          update: {},
+        });
+      else await tx.communityCommentLike.deleteMany({ where });
+      return;
+    }
     if (action === "delete-comment") {
       if (c.userId !== u.id)
         throw new CommunityError(
