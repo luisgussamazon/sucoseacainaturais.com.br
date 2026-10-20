@@ -12,7 +12,7 @@ export default async function Mural({
 }) {
   const user = await communityActor();
   const p = await searchParams;
-  const page = Math.max(1, Math.min(100, Number(p.page) || 1));
+  const page = Math.max(1, Math.min(100, Math.floor(Number(p.page)) || 1));
   return (
     <>
       <div className="page-heading">

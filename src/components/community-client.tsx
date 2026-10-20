@@ -376,9 +376,11 @@ type SocialData = {
 export function SocialInteractions({
   kind,
   targetId,
+  composerAlways = false,
 }: {
   kind: "POST" | "ALBUM" | "PHOTO";
   targetId: string;
+  composerAlways?: boolean;
 }) {
   const [data, setData] = useState<SocialData | null>(null),
     [error, setError] = useState(""),
@@ -505,10 +507,10 @@ export function SocialInteractions({
         </p>
       )}
       {!data && !error && <span role="status">Carregando interações…</span>}
-      {open && (
+      {(open || composerAlways) && (
         <div id={formId}>
           <div aria-live="polite">
-            {data?.comments.map((c) => (
+            {(open ? data?.comments : [])?.map((c) => (
               <div className="community-comment" key={c.id}>
                 <strong>{c.name}</strong>
                 <small>
@@ -524,7 +526,7 @@ export function SocialInteractions({
                     Excluir meu comentário
                   </button>
                 )}
-                {data.canModerate && (
+                {data?.canModerate && (
                   <CommunityForm action="moderate" label="Ocultar comentário">
                     <input type="hidden" name="kind" value={kind} />
                     <input type="hidden" name="id" value={c.id} />
@@ -567,6 +569,7 @@ export function SocialInteractions({
               <textarea
                 required
                 maxLength={1000}
+                placeholder="Escreva um comentário..."
                 value={body}
                 onChange={(e) => {
                   setBody(e.target.value);

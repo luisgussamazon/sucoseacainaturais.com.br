@@ -1,3 +1,4 @@
+import { FeedPost } from "./feed-post";
 import { SharePostActions } from "./redemption-center";
 import Link from "next/link";
 import { db } from "@/lib/db";
@@ -73,7 +74,7 @@ export async function CommunityFeed({
   const posts = await db.communityPost.findMany({
     where,
     orderBy: [{ pinned: "desc" }, { publishedAt: "desc" }],
-    take: limit,
+    take: limit + 1,
     skip: (page - 1) * limit,
     include: {
       author: { select: { name: true } },
@@ -93,37 +94,32 @@ export async function CommunityFeed({
           text="As ações, comunicados e reconhecimentos publicados pela equipe aparecerão neste mural."
         />
       )}
-      {posts.map((p) => (
-        <article className="panel community-post" key={p.id} id={p.id}>
-          <div className="community-post-meta">
-            <span className="badge">{p.category}</span>
-            <small>
-              {p.pinned ? "📌 Fixado · " : ""}
-              {date(p.publishedAt)}
-            </small>
-          </div>
-          <h2>{p.title}</h2>
-          <small className="muted">Publicado por {p.author.name}</small>
-          <p className="community-text">{p.description}</p>
-          <PhotoGallery
-            photos={p.imageAuthorization && p.restrictedChecked ? p.media : []}
-            title={p.title}
-            interactive
-          />
-          {p.albumId && (
-            <Link href={"/momentos?album=" + p.albumId}>
-              Ver álbum associado →
-            </Link>
+      {posts.slice(0, limit).map((p) => (
+        <FeedPost
+          key={p.id}
+          id={p.id}
+          title={p.title}
+          description={p.description}
+          author={p.author.name}
+          category={p.category}
+          pinned={p.pinned}
+          publishedAt={p.publishedAt?.toISOString() ?? ""}
+          albumId={p.albumId}
+          photos={p.imageAuthorization && p.restrictedChecked ? p.media : []}
+        >
+          {p.redemptionShare && (
+            <SharePostActions
+              postId={p.id}
+              own={p.authorId === user.id}
+              admin={user.role === "ADMIN"}
+            />
           )}
-          <Link href={"/mural?post=" + p.id}>Abrir publicação completa →</Link>
-          <SocialInteractions kind="POST" targetId={p.id} />
-          {p.redemptionShare && <SharePostActions postId={p.id} own={p.authorId===user.id} admin={user.role==="ADMIN"} />}
-        </article>
+        </FeedPost>
       ))}
       <div className="community-links">
         <Link href="/mural">Ver histórico do mural →</Link>
         {page > 1 && <Link href={pageHref(page - 1)}>← Anteriores</Link>}
-        {posts.length === limit && (
+        {posts.length > limit && (
           <Link href={pageHref(page + 1)}>Mais publicações →</Link>
         )}
       </div>
