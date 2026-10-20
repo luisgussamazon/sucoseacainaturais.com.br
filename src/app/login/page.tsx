@@ -11,7 +11,9 @@ export default async function Login({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  if (await currentUser()) redirect("/");
+  const sessionUser = await currentUser({ allowTemporary: true });
+  if (sessionUser)
+    redirect(sessionUser.mustChangePassword ? "/alterar-senha-inicial" : "/");
   const { error } = await searchParams;
   return (
     <div className="login-shell">

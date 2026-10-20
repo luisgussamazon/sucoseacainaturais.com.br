@@ -25,6 +25,7 @@ model User {
   id                      String             @id @default(cuid())
   name                    String
   email                   String             @unique
+  mustChangePassword      Boolean            @default(false)
   passwordHash            String
   role                    Role               @default(EMPLOYEE)
   active                  Boolean            @default(true)

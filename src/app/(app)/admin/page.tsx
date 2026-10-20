@@ -1,3 +1,4 @@
+import { EmployeeImport } from "@/components/employee-import";
 import { PasswordManagement } from "@/components/management";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
@@ -113,6 +114,7 @@ export default async function Admin() {
           </table>
         </div>
       </section>
+      <EmployeeImport />
       <PasswordManagement actorId={actor.id} />
     </>
   );

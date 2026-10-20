@@ -49,7 +49,14 @@ export async function login(f: FormData) {
       data: { count: 1, resetAt: new Date(Date.now() + 15 * 60000) },
     });
   else if (attempt.count > 10) redirect("/login?error=rate");
-  const user = await db.user.findUnique({ where: { email } });
+  const exact = await db.user.findUnique({ where: { email } });
+  const matches = exact
+    ? [exact]
+    : await db.user.findMany({
+        where: { email: { equals: email, mode: "insensitive" } },
+        take: 2,
+      });
+  const user = matches.length === 1 ? matches[0] : null;
   if (!user?.active || !verifyPassword(password, user.passwordHash))
     redirect("/login?error=invalid");
   const token = randomBytes(32).toString("hex");
@@ -68,7 +75,7 @@ export async function login(f: FormData) {
     path: "/",
     maxAge: 8 * 3600,
   });
-  redirect("/");
+  redirect(user.mustChangePassword ? "/alterar-senha-inicial" : "/");
 }
 export async function logout() {
   const jar = await cookies();
@@ -308,7 +315,15 @@ export async function createUser(f: FormData) {
   const email = z.email().parse(str(f, "email").toLowerCase());
   const password = z.string().min(12).max(128).parse(str(f, "password"));
   const role = z.enum(["EMPLOYEE", "HR", "ADMIN"]).parse(str(f, "role"));
-  await transaction(async (tx) => {
+  await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(2399956543::bigint)`;
+    if (
+      await tx.user.findFirst({
+        where: { email: { equals: email, mode: "insensitive" } },
+        select: { id: true },
+      })
+    )
+      throw new Error("E-mail já cadastrado.");
     const user = await tx.user.create({
       data: { name, email, role, passwordHash: hashPassword(password) },
     });
