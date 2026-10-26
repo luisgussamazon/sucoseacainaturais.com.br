@@ -1,5 +1,9 @@
 # SSD VBJ2
 
+## Versão de apresentação no Render (sem banco)
+
+A pasta [`demo/`](demo/README.md) contém uma demonstração estática independente, com dados fictícios e interações salvas no navegador. Para publicar como **Static Site** no Render, use `node demo/build.mjs` como Build Command e `demo/dist` como Publish Directory. O [`render.yaml`](render.yaml) também permite configurar o serviço por Blueprint. Veja o [passo a passo completo](demo/README.md).
+
 Loja interna de colaboradores com Next.js App Router, TypeScript, Tailwind CSS, Prisma e PostgreSQL. Amazonitos são moedas fictícias, sem valor monetário real.
 
 ## Funcionalidades
