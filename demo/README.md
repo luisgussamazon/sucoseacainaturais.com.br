@@ -14,14 +14,23 @@ No Render, escolha **New → Static Site**, conecte o repositório e configure:
 | Root Directory | Deixe vazio se `render.yaml` estiver na raiz do repositório |
 | Build Command | `node demo/build.mjs` |
 | Publish Directory | `demo/dist` |
+| Environment Variable | `SKIP_INSTALL_DEPS` = `true` |
 
 Se o seu repositório incluir a pasta externa `sucoseacainaturais.com.br/`, use `sucoseacainaturais.com.br` em **Root Directory**. Os outros dois campos ficam iguais.
 
-Clique em **Deploy Static Site**. Não adicione banco, variáveis de ambiente ou comando de inicialização. Não use o Dockerfile nem o build Next.js para esta demonstração. A navegação usa `#/loja`, `#/carteira` etc., por isso atualizar ou compartilhar uma tela não exige regra de rewrite.
+Clique em **Create Static Site**. Não adicione banco, credenciais ou comando de inicialização. A variável `SKIP_INSTALL_DEPS=true` evita a instalação automática das dependências da aplicação original, que a demonstração não utiliza. Não use o Dockerfile nem o build Next.js para esta demonstração. A navegação usa `#/loja`, `#/carteira` etc., por isso atualizar ou compartilhar uma tela não exige regra de rewrite.
 
 Como alternativa, com `render.yaml` na raiz do repositório, use **New → Blueprint**. O arquivo configura apenas o site estático, sem banco. Se o repositório incluir a pasta externa, prefira o cadastro manual acima; o Blueprint fornecido pressupõe que a raiz do repositório seja a própria pasta do projeto.
 
 Referências: [Static Sites no Render](https://render.com/docs/static-sites) e [campos do render.yaml](https://render.com/docs/blueprint-spec).
+
+### Erro: `pip install -r requirements.txt`
+
+Esse log indica que o serviço está executando um build Python. A demonstração não usa Python e não precisa de `requirements.txt`.
+
+No painel do Render, crie **New → Static Site**, selecione o mesmo repositório e a branch `main`, e preencha os campos da tabela acima. Se você já estiver em um Static Site, corrija o Build Command para `node demo/build.mjs`, o Publish Directory para `demo/dist` e faça um novo deploy. Um formulário com campos de runtime Python e Start Command corresponde a um serviço de aplicação; use o cadastro de Static Site para esta versão.
+
+Ter `render.yaml` no repositório não substitui automaticamente os campos de um serviço criado manualmente. Para aplicar esse arquivo, use o fluxo **New → Blueprint** descrito acima.
 
 ## Apresentar
 
