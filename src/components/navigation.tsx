@@ -76,7 +76,7 @@ export function Navigation({
               href="/rh"
             >
               <Users size={19} />
-              Pessoas e campanhas
+              Conceder Amazonitos
             </Link>
             <Link
               className={`nav-link ${pathname === "/relatorios" ? "active" : ""}`}
