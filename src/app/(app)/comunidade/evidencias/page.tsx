@@ -1,10 +1,10 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { rights } from "@/lib/community";
 import { communityActor } from "@/components/community-server";
 import { CommunityForm, PhotoGallery } from "@/components/community-client";
-import { Empty, PageTitle, date } from "@/components/ui";
+import { Empty, date } from "@/components/ui";
 export default async function Evidence({
   searchParams,
 }: {
@@ -57,12 +57,7 @@ export default async function Evidence({
   });
   return (
     <>
-      <PageTitle
-        eyebrow="GESTÃO DE MISSÕES"
-        title="Evidências Pendentes"
-        description="Avalie as imagens antes de conceder a recompensa. A divulgação é um processo separado."
-      />
-      <Link href="/comunidade">← Comunidade e Eventos</Link>
+      <h2>Evidências pendentes</h2>
       <form className="community-filters">
         <label>
           Status

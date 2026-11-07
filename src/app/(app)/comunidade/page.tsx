@@ -1,7 +1,6 @@
+import { AlbumEditor } from "@/components/album-editor";
 import { PublicationEditor } from "@/components/publication-editor";
 import {
-  Users,
-  Plus,
   FileText,
   Heart,
   MessageCircle,
@@ -9,7 +8,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { rights, photoGuidance } from "@/lib/community";
 import {
@@ -20,12 +19,11 @@ import {
 import { communityActor } from "@/components/community-server";
 import {
   PublicationThumbnail,
-  MissionTypeSelect,
   CommunityForm,
   PhotoUpload,
   PhotoGallery,
 } from "@/components/community-client";
-import { Stats, date } from "@/components/ui";
+import { date } from "@/components/ui";
 const iso = (d?: Date) =>
   d ? new Date(d.getTime() - 3 * 3600000).toISOString().slice(0, 16) : "";
 function Input({
@@ -105,18 +103,21 @@ export default async function Management({
     "photo-mission": r.missions,
     "quiz-mission": r.missions,
     recognition: r.recognize,
-    photos: r.photos,
+    photos: r.photos || r.manage,
     comments: r.moderate,
     access: r.manage,
   };
+  const requested = p.kind && Object.hasOwn(allowed, p.kind) ? p.kind as keyof typeof allowed : undefined;
+  if (!requested && r.review && ![allowed.post, allowed.album, allowed.event, allowed["photo-mission"], allowed["quiz-mission"], allowed.recognition, allowed.photos].some(Boolean)) redirect("/comunidade/evidencias");
   const fallback =
     (Object.keys(allowed) as (keyof typeof allowed)[]).find(
       (k) => allowed[k],
     ) ?? "access";
   const kind = (
-    p.kind && p.kind in allowed ? p.kind : fallback
+    requested ?? fallback
   ) as keyof typeof allowed;
   const permitted = allowed[kind];
+  if (!permitted) notFound();
   const search = q
     ? { title: { contains: q, mode: "insensitive" as const } }
     : {};
@@ -126,14 +127,6 @@ export default async function Management({
         ...search,
         ...(p.category ? { category: p.category.slice(0, 100) } : {}),
       };
-  const brasiliaToday = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-  }).formatToParts(new Date());
-  const monthStart = new Date(
-    `${brasiliaToday.find((p) => p.type === "year")!.value}-${brasiliaToday.find((p) => p.type === "month")!.value}-01T00:00:00-03:00`,
-  );
   const [
     posts,
     albums,
@@ -142,12 +135,11 @@ export default async function Management({
     comments,
     mediaComments,
     users,
-    counts,
     grants,
   ] = await Promise.all([
     r.publish || r.recognize || r.photos
       ? db.communityPost.findMany({
-          where: kind === "post" || kind === "recognition" ? filter : {},
+          where: kind === "post" || kind === "recognition" ? { ...filter, ...(!p.id ? { completionId: kind === "recognition" ? { not: null } : null } : {}) } : kind === "photos" ? search : {},
           orderBy: { createdAt: p.sort === "oldest" ? "asc" : "desc" },
           take: 30,
           skip: p.id ? 0 : (page - 1) * 30,
@@ -173,7 +165,7 @@ export default async function Management({
       : [],
     r.albums || r.photos || r.publish
       ? db.communityAlbum.findMany({
-          where: kind === "album" ? filter : {},
+          where: kind === "album" ? filter : kind === "photos" ? search : {},
           orderBy: { createdAt: "desc" },
           take: 30,
           skip: kind === "album" && !p.id ? (page - 1) * 30 : 0,
@@ -192,7 +184,7 @@ export default async function Management({
       : [],
     r.events || r.photos || r.publish || r.albums
       ? db.communityEvent.findMany({
-          where: kind === "event" ? filter : {},
+          where: kind === "event" ? filter : kind === "photos" ? search : {},
           orderBy: { startsAt: "desc" },
           take: 30,
           skip: kind === "event" && !p.id ? (page - 1) * 30 : 0,
@@ -204,7 +196,7 @@ export default async function Management({
           },
         })
       : [],
-    r.missions
+    r.missions && kind === "photo-mission"
       ? db.photoMission.findMany({
           where:
             kind === "photo-mission"
@@ -220,7 +212,7 @@ export default async function Management({
           include: { mission: true },
         })
       : [],
-    r.moderate
+    r.moderate && kind === "comments"
       ? db.communityComment.findMany({
           where: {
             deletedAt: null,
@@ -235,7 +227,7 @@ export default async function Management({
           },
         })
       : [],
-    r.moderate
+    r.moderate && kind === "comments"
       ? db.mediaComment.findMany({
           where: {
             deletedAt: null,
@@ -255,7 +247,7 @@ export default async function Management({
           },
         })
       : [],
-    r.manage
+    r.manage && kind === "access"
       ? db.user.findMany({
           where: {
             active: true,
@@ -274,14 +266,6 @@ export default async function Management({
           include: { communityGrant: true },
         })
       : [],
-    Promise.all([
-      db.communityPost.count({
-        where: { status: "PUBLISHED", publishedAt: { lte: new Date() } },
-      }),
-      db.photoEvidence.count({ where: { submittedAt: { gte: monthStart } } }),
-      db.photoEvidence.count({ where: { status: "PENDING" } }),
-      db.photoEvidence.count({ where: { status: "APPROVED" } }),
-    ]),
     r.missions
       ? db.communityGrant.findMany({
           where: { review: true, user: { active: true } },
@@ -340,104 +324,18 @@ export default async function Management({
     "quiz-mission",
   ].includes(kind);
   const action = kind === "recognition" ? "post" : kind;
+  const candidates = kind === "recognition" && !completion && !post
+    ? await db.completion.findMany({
+        where: { recognitionPost: null }, take: 100, orderBy: { createdAt: "desc" },
+        include: { user: { select: { name: true } }, mission: { select: { title: true, photoConfig: { select: { id: true } } } } },
+      }) : [];
+  const photoPairs = candidates.filter(c => c.mission.photoConfig).map(c => ({ userId: c.userId, photoMissionId: c.mission.photoConfig!.id }));
+  const approved = photoPairs.length ? await db.photoEvidence.findMany({ where: { OR: photoPairs, status: "APPROVED", post: null }, select: { userId: true, photoMissionId: true } }) : [];
+  const recognitionOptions = candidates.filter(c => !c.mission.photoConfig || approved.some(e => e.userId === c.userId && e.photoMissionId === c.mission.photoConfig!.id));
+
   return (
     <div className="community-management">
-      <div className="community-page-heading">
-        <span className="community-heading-icon">
-          <Users size={26} />
-        </span>
-        <div>
-          <h1>Comunidade e Eventos</h1>
-          <p>
-            Acesso por permissões individuais, com imagens autorizadas e dados
-            protegidos.
-          </p>
-        </div>
-        {r.publish && (
-          <Link className="button" href="/comunidade?kind=post#editor">
-            <Plus size={18} /> Nova publicação
-          </Link>
-        )}
-      </div>
-      <nav className="community-primary-tabs" aria-label="Áreas da comunidade">
-        {r.publish && (
-          <Link
-            aria-current={kind === "post" ? "page" : undefined}
-            href="?kind=post"
-          >
-            Publicações
-          </Link>
-        )}
-        {r.review && (
-          <Link href="/comunidade/evidencias">Evidências pendentes</Link>
-        )}
-        {r.moderate && (
-          <Link
-            aria-current={kind === "comments" ? "page" : undefined}
-            href="?kind=comments"
-          >
-            Comentários
-          </Link>
-        )}
-      </nav>
-      <div
-        className="community-quick-actions"
-        aria-label="Ações de eventos e conquistas"
-      >
-        {r.events && <Link href="?kind=event#editor">Cadastrar evento</Link>}
-        {r.recognize && (
-          <Link href="/comunidade/conquistas">Publicar conquista</Link>
-        )}
-      </div>
-      <details className="community-tools">
-        <summary>Mais ferramentas</summary>
-        <nav
-          className="community-tabs community-secondary-tabs"
-          aria-label="Gestão da comunidade"
-        >
-          {r.photos && <Link href="?kind=photos">Gerenciar fotos</Link>}
-          {r.albums && <Link href="?kind=album">Álbuns</Link>}
-          {r.events && <Link href="?kind=event">Eventos</Link>}
-          {r.missions && (
-            <>
-              <Link href="?kind=photo-mission">Missões com foto</Link>
-              <Link href="?kind=quiz-mission">Quizzes</Link>
-            </>
-          )}
-          {r.recognize && (
-            <Link href="/comunidade/conquistas">
-              Conquistas aguardando publicação
-            </Link>
-          )}
-
-          {r.manage && <Link href="?kind=access">Permissões</Link>}
-        </nav>
-      </details>
-      <Stats
-        items={[
-          {
-            label: "Publicações realizadas",
-            value: String(counts[0]),
-            detail: "Conteúdos publicados",
-          },
-          {
-            label: "Participações em fotos",
-            value: String(counts[1]),
-            detail: "Dados neste mês",
-          },
-          {
-            label: "Evidências pendentes",
-            value: String(counts[2]),
-            detail: "Aguardando avaliação",
-          },
-          {
-            label: "Evidências aprovadas",
-            value: String(counts[3]),
-            detail: "Recompensas registradas",
-          },
-        ]}
-      />
-      {kind !== "post" && (
+      {permitted && ["photos", "comments", "access"].includes(kind) && (
         <form className="community-filters">
           <input type="hidden" name="kind" value={kind} />
           <label>
@@ -461,8 +359,9 @@ export default async function Management({
           photos={r.photos}
         />
       )}
-      {creator && canEdit && (kind !== "post" || !!post?.completionId) && (
-        <section className="panel" id="editor">
+      {kind === "album" && canEdit && <AlbumEditor album={album} events={events} photos={r.photos} />}
+      {creator && kind !== "album" && canEdit && (kind !== "post" || !!post?.completionId) && (
+        <section className="panel community-creation-editor" id="editor">
           <h2>
             {p.id ? "Editar" : "Criar"}{" "}
             {kind === "photo-mission"
@@ -471,33 +370,23 @@ export default async function Management({
                 ? "quiz"
                 : kind === "recognition"
                   ? "reconhecimento"
-                  : kind === "album"
-                    ? "álbum"
                     : kind === "event"
                       ? "evento"
                       : "publicação"}
           </h2>
-          {kind === "recognition" && !completion && !post && (
-            <p className="notice">
-              Selecione uma conquista em{" "}
-              <Link href="/comunidade/conquistas">
-                Conquistas aguardando publicação
-              </Link>
-              .
-            </p>
-          )}
           <CommunityForm
             key={kind + (p.id ?? "new") + (completion?.id ?? "")}
             action={action}
             label="Salvar conteúdo"
+            preserveKind={kind === "recognition" || post?.completionId ? "recognition" : kind}
           >
             <input type="hidden" name="id" value={p.id ?? ""} />
             {(kind === "recognition" || post?.completionId) && (
-              <input
-                type="hidden"
-                name="completionId"
-                value={completion?.id ?? post?.completionId ?? ""}
-              />
+              completion?.id || post?.completionId ? <input type="hidden" name="completionId" value={completion?.id ?? post?.completionId ?? ""} /> : <label className="field">
+                Conquista registrada
+                <select name="completionId" required defaultValue=""><option value="">Selecione uma conclusão aprovada</option>{recognitionOptions.map(c => <option key={c.id} value={c.id}>{c.mission.title} · {c.user.name}</option>)}</select>
+                <small>{recognitionOptions.length ? "Selecione a conclusão que será reconhecida. A publicação não concede novas moedas." : "Nenhuma conclusão disponível nesta seleção."} <Link href="/comunidade/conquistas">Consultar conquistas pendentes</Link></small>
+              </label>
             )}
             <Input
               name="title"
@@ -584,7 +473,6 @@ export default async function Management({
               </>
             )}
             {(kind === "post" ||
-              kind === "album" ||
               kind === "recognition") && (
               <label className="field">
                 Evento relacionado
@@ -602,22 +490,6 @@ export default async function Management({
                   ))}
                 </select>
               </label>
-            )}
-            {kind === "album" && (
-              <>
-                <Choice
-                  name="category"
-                  label="Categoria do álbum"
-                  options={categories}
-                  value={album?.category}
-                />
-                <Input
-                  name="eventDate"
-                  label="Data do evento (Brasília)"
-                  type="datetime-local"
-                  value={iso(album?.eventDate ?? new Date())}
-                />
-              </>
             )}
             {kind === "event" && (
               <>
@@ -638,13 +510,6 @@ export default async function Management({
             )}
             {(kind === "photo-mission" || kind === "quiz-mission") && (
               <>
-                <MissionTypeSelect value={kind} />
-                <p>
-                  <Link href="?kind=photo-mission">
-                    Criar missão fotográfica
-                  </Link>{" "}
-                  · <Link href="?kind=quiz-mission">Criar quiz</Link>
-                </p>
                 <Input
                   name="reward"
                   label="Recompensa em Amazonitos"
@@ -817,7 +682,7 @@ export default async function Management({
           </CommunityForm>
         </section>
       )}
-      {canEdit && ["post", "recognition"].includes(kind) && (
+      {canEdit && ["post", "recognition"].includes(kind) && (kind !== "recognition" || !!completion || !!post) && (
         <section className="panel publication-list">
           <div className="publication-list-header">
             <div className="community-card-heading">
@@ -964,7 +829,7 @@ export default async function Management({
           </div>
         </section>
       )}
-      {canEdit && kind === "album" && (
+      {canEdit && kind === "album" && albums.length > 0 && (
         <section className="panel">
           <h2>Álbuns</h2>
           {albums.map((x) => (
@@ -978,7 +843,7 @@ export default async function Management({
           ))}
         </section>
       )}
-      {canEdit && kind === "event" && (
+      {canEdit && kind === "event" && events.length > 0 && (
         <section className="panel">
           <h2>Eventos</h2>
           {events.map((x) => (
@@ -994,7 +859,7 @@ export default async function Management({
           ))}
         </section>
       )}
-      {canEdit && kind === "photo-mission" && (
+      {canEdit && kind === "photo-mission" && missions.length > 0 && (
         <section className="panel">
           <h2>Missões com foto</h2>
           {missions.map((x) => (
@@ -1083,6 +948,12 @@ export default async function Management({
             ))}
         </section>
       )}
+      {r.manage && kind === "photos" && <section className="panel"><h2>Retenção de imagens</h2>          <CommunityForm action="purge" label="Remover somente fotos expiradas">
+            <p>
+              Remove arquivos expirados, preservando registros, avaliações e
+              extratos.
+            </p>
+          </CommunityForm></section>}
       {r.moderate && kind === "comments" && (
         <section className="panel">
           <h2>Moderação de comentários</h2>
@@ -1151,15 +1022,10 @@ export default async function Management({
               </CommunityForm>
             </div>
           ))}
-          <CommunityForm action="purge" label="Remover somente fotos expiradas">
-            <p>
-              Remove arquivos expirados, preservando registros, avaliações e
-              extratos.
-            </p>
-          </CommunityForm>
+
         </section>
       )}
-      <div className="community-links">
+      {(page > 1 || (kind === "post" || kind === "recognition" ? posts.length === 30 : kind === "album" ? albums.length === 30 : kind === "event" ? events.length === 30 : kind === "photo-mission" ? missions.length === 30 : !creator)) && <div className="community-links">
         {page > 1 && (
           <Link
             href={
@@ -1194,7 +1060,7 @@ export default async function Management({
         >
           Próxima página
         </Link>
-      </div>
+      </div>}
     </div>
   );
 }

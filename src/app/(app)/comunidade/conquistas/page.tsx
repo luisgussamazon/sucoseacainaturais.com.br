@@ -1,10 +1,10 @@
-﻿import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { rights } from "@/lib/community";
 import { communityActor } from "@/components/community-server";
 import { PhotoGallery } from "@/components/community-client";
-import { PageTitle, Empty, date } from "@/components/ui";
+import { Empty, date } from "@/components/ui";
 export default async function Achievements({
   searchParams,
 }: {
@@ -71,13 +71,8 @@ export default async function Achievements({
     : [];
   return (
     <>
-      <PageTitle
-        eyebrow="RECONHECIMENTO"
-        title="Conquistas aguardando publicação"
-        description="Localize conclusões antigas e recentes. Publicar reconhecimentos não altera saldo nem concede moedas novamente."
-      />
-      <Link href="/comunidade">← Comunidade e Eventos</Link>
-      <form className="community-filters">
+      <h2>Conquistas pendentes</h2>
+      <form className="community-filters" action="/comunidade/conquistas">
         <label>
           Buscar missão ou associado
           <input name="q" defaultValue={q} />

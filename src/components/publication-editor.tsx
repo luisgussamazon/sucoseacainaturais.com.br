@@ -34,7 +34,7 @@ export function PublicationEditor({
   const iso = (d: Date) =>
     new Date(d.getTime() - 3 * 3600000).toISOString().slice(0, 16);
   return (
-    <section className="panel publication-editor" id="editor">
+    <section className="panel publication-editor community-creation-editor" id="editor">
       <div className="community-card-heading">
         <span className="community-heading-icon">
           <FileText size={23} />

@@ -1,0 +1,103 @@
+/* Community workspace: each route keeps its existing server authorization. */
+.community-workspace { min-width: 0; color: #102d48; }
+.community-workspace-heading { margin-bottom: 24px; }
+.community-workspace-heading > span { color: #b45a00; font-size: 11px; font-weight: 750; letter-spacing: 1.3px; }
+.community-workspace-heading h1 { margin: 8px 0; font-size: clamp(26px, 3vw, 36px); }
+.community-workspace-heading p { color: #62738a; margin: 0; }
+.community-tool-menu { background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 8px 20px; margin-bottom: 24px; }
+.community-tool-group { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; gap: 12px; }
+.community-tool-group + .community-tool-group { border-top: 1px solid #edf0f5; }
+.community-tool-group h2 { font-size: 11px; letter-spacing: 1px; color: #718096; margin: 0; }
+.community-tool-links { display: flex; gap: 4px; min-width: 0; }
+.community-tool-links a { display: flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 7px; min-height: 58px; padding: 12px 8px; border-bottom: 3px solid transparent; color: #52657e; font-size: 13px; font-weight: 600; text-align: center; line-height: 1.4; }
+.community-tool-links a svg { flex-shrink: 0; }
+.community-tool-links a[aria-current="page"] { color: #b85100; background: #fff3e5; border-bottom-color: #f68a14; }
+.community-tool-links a:hover { background: #fff8ef; }
+.community-tool-links a:focus-visible { outline: 3px solid #b45a00; outline-offset: -3px; }
+.community-tool-panel { min-width: 0; }
+.community-tool-panel .community-management { max-width: none; }
+.community-creation-editor, .community-tool-panel > .panel { border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 3px 12px #102d4805; padding: 26px; }
+.community-editor-heading { border-bottom: 1px solid #edf0f5; padding-bottom: 18px; margin-bottom: 22px; }
+.community-editor-heading h2 { font-size: 23px; margin-bottom: 6px; }
+.community-editor-heading p { margin: 0; color: #64748b; }
+.community-creation-editor .community-form > fieldset { display: grid; gap: 18px; min-width: 0; margin: 0; }
+.community-creation-editor .field { display: grid; gap: 8px; min-width: 0; font-size: 13px; font-weight: 600; }
+.community-creation-editor .field :is(input, select, textarea) { width: 100%; min-width: 0; border-color: #dbe3ed; font-weight: 400; }
+.community-creation-editor textarea { min-height: 120px; resize: vertical; }
+.community-creation-editor .form-two { margin: 0; gap: 16px; }
+.album-editor-grid.photo-upload { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(240px, 1fr); gap: 30px; padding: 0; border: 0; background: transparent; }
+.album-editor-main { display: grid; align-content: start; gap: 18px; min-width: 0; }
+.album-editor-sidebar { border-left: 1px solid #edf0f5; padding-left: 26px; min-width: 0; }
+.album-editor-sidebar .field { margin-bottom: 16px; }
+.album-editor-sidebar .notice { margin-top: 18px; font-size: 12px; line-height: 1.6; }
+.album-cover-preview, .album-cover-empty { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 12px; object-fit: contain; background: #f5f7fa; border: 1px solid #e2e8f0; }
+.album-cover-empty { display: grid; align-content: center; justify-items: center; gap: 12px; color: #7c8da4; padding: 16px; text-align: center; }
+.album-cover-empty p { margin: 0; }
+.album-editor .upload-dropzone { min-height: 150px; border: 2px dashed #c7d6e6; background: #f8fbff; border-radius: 12px; }
+.album-editor .selected-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+.album-editor .selected-photo { min-width: 0; width: auto; }
+.album-editor .selected-photo > span { overflow-wrap: anywhere; }
+.community-editor-confirmations { border-top: 1px solid #edf0f5; padding-top: 18px; display: grid; gap: 12px; }
+.community-editor-confirmations > p { color: #64748b; font-size: 12px; }
+.community-form-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; border-top: 1px solid #edf0f5; padding-top: 18px; }
+.community-form-footer .button { min-height: 44px; }
+.community-creation-editor .community-form > [role="status"] { padding-top: 14px; }
+@media (max-width: 1100px) and (min-width: 769px) {
+  .community-tool-menu { padding-inline: 10px; }
+  .community-tool-group { grid-template-columns: 68px minmax(0,1fr); gap: 4px; }
+  .community-tool-links a { flex-direction: column; font-size: 11px; padding-inline: 4px; gap: 5px; }
+}
+@media (max-width: 768px) {
+  .community-tool-menu { padding: 8px 12px; }
+  .community-tool-group { display: block; padding-top: 10px; }
+  .community-tool-group h2 { margin: 0 0 6px; }
+  .community-tool-links { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scroll-padding-inline: 4px; }
+  .community-tool-links a { flex: 0 0 auto; white-space: nowrap; min-height: 48px; padding: 10px 14px; font-size: 13px; }
+  .community-creation-editor { padding: 18px; }
+  .album-editor-grid.photo-upload { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .album-editor-sidebar { border-left: 0; border-top: 1px solid #edf0f5; padding: 22px 0 0; }
+  .album-cover-preview, .album-cover-empty { max-height: 260px; }
+  .community-form-footer .button { flex: 1 1 160px; }
+  .community-creation-editor .form-two { grid-template-columns: minmax(0,1fr); }
+  .community-creation-editor .photo-upload-actions { flex-wrap: wrap; }
+}
+.community-creation-editor:not(.album-editor):not(.publication-editor) .community-form > fieldset { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.community-creation-editor:not(.album-editor) .community-form > fieldset > :is(.photo-upload, .notice, .check, .community-form-footer, .field:has(textarea)) { grid-column: 1 / -1; }
+@media (max-width: 768px) {
+  .community-creation-editor:not(.album-editor):not(.publication-editor) .community-form > fieldset { grid-template-columns: minmax(0, 1fr); }
+}
+.photo-upload-main { display: grid; gap: 10px; }
+.album-editor .photo-upload-actions { position: static; display: flex; gap: 10px; flex-wrap: wrap; }
+.publication-editor .publication-confirmations { width: auto; margin: 0; padding: 18px 0 0; grid-column: 1 / -1; grid-row: auto; }
+.publication-editor .community-form-footer { grid-column: 1 / -1; }
+.publication-editor .publication-form .clear-publication { grid-row: auto; margin: 0; }
+.community-workspace .community-form-footer .button.secondary { background: white; color: #52657e; border: 1px solid #d6e0eb; box-shadow: none; }
+.community-editor-confirmations .check { display: flex; flex-direction: row; gap: 10px; align-items: flex-start; }
+.community-editor-confirmations .check input { position: static; width: 18px; height: 18px; min-height: 18px; margin: 2px 0 0; }
+@media (max-width: 768px) {
+  .community-workspace .photo-upload-composer .photo-upload-actions > .button {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .community-workspace .photo-upload-composer .photo-cover {
+    min-height: 44px;
+    padding: 8px;
+    font-size: 12px;
+  }
+  .community-workspace .photo-upload-composer .photo-order-controls button {
+    min-width: 44px;
+    min-height: 44px;
+    height: 44px;
+    padding: 8px;
+  }
+  .community-workspace .photo-upload-composer .photo-order-controls button:last-child {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    top: 4px;
+    right: 4px;
+  }
+  .community-workspace .photo-upload-composer .selected-photo > img { height: 110px; }
+  .community-workspace .community-form .check { min-height: 44px; align-items: center; }
+}

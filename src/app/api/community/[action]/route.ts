@@ -327,6 +327,9 @@ export async function POST(
             8
           )
             throw new CommunityError("Um álbum pode ter até 8 fotos.");
+          if (photos.some((m) => m.cover) && !optional(f, "coverId")) {
+            await tx.communityMedia.updateMany({ where: { albumId: a.id }, data: { cover: false } });
+          }
           await tx.communityMedia.createMany({
             data: photos.map((m) => ({ ...m, ownerId: u.id, albumId: a.id })),
           });
@@ -398,8 +401,9 @@ export async function POST(
           await audit(tx, u, "COMMUNITY_EVENT", e.id);
         }
       });
-      message =
-        "Conteúdo salvo. Rascunhos e arquivos permanecem fora do mural.";
+      message = action === "album"
+        ? state.status === "PUBLISHED" ? "Álbum publicado em Momentos VBJ2 para usuários autenticados." : state.status === "DRAFT" ? "Rascunho do álbum salvo. Ele ainda não foi publicado." : "Álbum arquivado."
+        : "Conteúdo salvo. Rascunhos e arquivos permanecem fora do mural.";
     } else if (
       [
         "like",
@@ -490,6 +494,7 @@ export async function POST(
             photoMissionId: pm.id,
           })),
         });
+        contentId = pm.id;
         await audit(tx, u, "PHOTO_MISSION", pm.id);
       });
     } else if (action === "close-photo-mission") {

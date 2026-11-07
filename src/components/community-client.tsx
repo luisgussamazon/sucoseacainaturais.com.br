@@ -21,7 +21,15 @@ export function CommunityForm({
   reset = false,
   composer = false,
   onSuccess,
+  publishLabel,
+  draftLabel = "Salvar rascunho",
+  preserveKind,
+  archive = false,
 }: {
+  archive?: boolean;
+  publishLabel?: string;
+  draftLabel?: string;
+  preserveKind?: string;
   action: string;
   children: React.ReactNode;
   label?: string;
@@ -41,6 +49,8 @@ export function CommunityForm({
     lock.current = true;
     const form = e.currentTarget;
     const data = new FormData(form);
+    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    if (submitter?.name) data.set(submitter.name, submitter.value);
     setPending(true);
     setMessage("");
     setProgress(0);
@@ -50,6 +60,8 @@ export function CommunityForm({
           const xhr = new XMLHttpRequest();
           xhr.open("POST", "/api/community/" + action);
           xhr.responseType = "json";
+          xhr.timeout = 120000;
+          xhr.ontimeout = () => reject(new Error("O envio demorou mais que o esperado. Seus dados continuam preenchidos; confira a conexão e tente novamente."));
           xhr.upload.onprogress = (e) => {
             if (e.lengthComputable)
               setProgress(
@@ -71,6 +83,11 @@ export function CommunityForm({
           xhr.send(data);
         },
       );
+      form.dataset.dirty = "false";
+      if (result.contentId) {
+        const id = form.querySelector<HTMLInputElement>('input[name="id"]');
+        if (id) id.value = result.contentId;
+      }
       setError(false);
       setMessage(result.message);
       onSuccess?.(result.message);
@@ -83,7 +100,7 @@ export function CommunityForm({
         !String(data.get("id") ?? "")
       ) {
         router.replace(
-          "/comunidade?kind=" + action + "&id=" + result.contentId,
+          "/comunidade?kind=" + (preserveKind ?? action) + "&id=" + result.contentId,
         );
       }
       router.refresh();
@@ -99,6 +116,9 @@ export function CommunityForm({
   return (
     <form
       className={"community-form" + (composer ? " publication-form" : "")}
+      onInputCapture={(e) => { e.currentTarget.dataset.dirty = "true"; }}
+      onChangeCapture={(e) => { e.currentTarget.dataset.dirty = "true"; }}
+      onReset={(e) => { e.currentTarget.dataset.dirty = "false"; }}
       onSubmit={submit}
     >
       <fieldset disabled={pending}>
@@ -108,9 +128,13 @@ export function CommunityForm({
             Limpar
           </button>
         )}
-        <button className="button" type="submit">
-          {pending ? "Aguarde…" : label}
-        </button>
+        <div className="community-form-footer">
+          {publishLabel ? <>
+            <button className="button secondary" type="submit" name="status" value="DRAFT">{pending ? "Aguarde…" : draftLabel}</button>
+            <button className="button" type="submit" name="status" value="PUBLISHED">{pending ? "Aguarde…" : publishLabel}</button>
+          </> : <button className="button" type="submit">{pending ? "Aguarde…" : label}</button>}
+          {archive && <button className="button secondary" type="submit" name="status" value="ARCHIVED">Arquivar álbum</button>}
+        </div>
       </fieldset>
       {pending && (
         <div role="status">
@@ -142,20 +166,29 @@ export function PhotoUpload({
   required = false,
   max = 8,
   compact = false,
+  editorFields,
+  existingPhotos = [],
+  enabled = true,
 }: {
   required?: boolean;
   max?: number;
   compact?: boolean;
+  editorFields?: React.ReactNode;
+  existingPhotos?: { id: string }[];
+  enabled?: boolean;
 }) {
   const [photos, setPhotos] = useState<Selected[]>([]),
     [error, setError] = useState(""),
     [cover, setCover] = useState(""),
-    [drag, setDrag] = useState(false);
+    [drag, setDrag] = useState(false),
+    [existingCover, setExistingCover] = useState(existingPhotos[0]?.id ?? "");
   const box = useRef<HTMLDivElement>(null),
     picker = useRef<HTMLInputElement>(null),
     camera = useRef<HTMLInputElement>(null),
     latest = useRef<Selected[]>([]);
   latest.current = photos;
+  const savedCover = existingPhotos[0]?.id ?? "";
+  useEffect(() => { if (!latest.current.length) setExistingCover(savedCover); }, [savedCover]);
   useEffect(() => {
     const form = box.current?.closest("form");
     const append = (e: Event) => {
@@ -189,7 +222,10 @@ export function PhotoUpload({
       latest.current.forEach((p) => URL.revokeObjectURL(p.url));
     };
   }, []);
+  function dirty() { const form=box.current?.closest("form"); if(form) form.dataset.dirty="true"; }
   function add(files: File[]) {
+    if (!enabled || box.current?.closest("fieldset")?.disabled) return;
+    dirty();
     setError("");
     const next = [...photos];
     for (const file of files) {
@@ -217,6 +253,7 @@ export function PhotoUpload({
     if (!cover && next[0]) setCover(next[0].key);
   }
   function remove(key: string) {
+    dirty();
     const p = photos.find((p) => p.key === key);
     if (p) URL.revokeObjectURL(p.url);
     const next = photos.filter((p) => p.key !== key);
@@ -224,6 +261,7 @@ export function PhotoUpload({
     if (cover === key) setCover(next[0]?.key ?? "");
   }
   function move(index: number, delta: number) {
+    dirty();
     const next = [...photos];
     [next[index], next[index + delta]] = [next[index + delta], next[index]];
     setPhotos(next);
@@ -233,7 +271,7 @@ export function PhotoUpload({
       ref={box}
       data-cover={cover}
       className={
-        "photo-upload " +
+        "photo-upload " + (editorFields ? "album-editor-grid " : "") +
         (compact ? "photo-upload-composer " : "") +
         (drag ? "is-dragging" : "")
       }
@@ -248,7 +286,10 @@ export function PhotoUpload({
         add(Array.from(e.dataTransfer.files));
       }}
     >
-      <div className="photo-upload-actions">
+      <div className={editorFields ? "album-editor-main" : "photo-upload-main"}>
+      {editorFields}
+      {!enabled && <p className="notice">O envio de fotos exige permissão individual do administrador.</p>}
+      {enabled && max > 0 && <div className="photo-upload-actions">
         <button
           className="button"
           type="button"
@@ -263,8 +304,9 @@ export function PhotoUpload({
         >
           Usar câmera
         </button>
-      </div>
+      </div>}
       <input
+        disabled={!enabled}
         ref={picker}
         className="photo-picker"
         type="file"
@@ -277,6 +319,7 @@ export function PhotoUpload({
         }}
       />
       <input
+        disabled={!enabled}
         ref={camera}
         className="photo-picker"
         type="file"
@@ -288,7 +331,7 @@ export function PhotoUpload({
           e.target.value = "";
         }}
       />
-      {compact && (
+      {enabled && max > 0 && compact && (
         <button
           type="button"
           className="upload-dropzone"
@@ -301,7 +344,7 @@ export function PhotoUpload({
       )}
       <small>
         Arraste fotos para esta área ou use os botões. Até {max} fotos, 4 MB por
-        foto e 20 MB por envio.
+        foto e 20 MB por envio. Formatos: JPEG, PNG ou WebP.
         {required ? " É necessário enviar pelo menos uma foto." : ""}
       </small>
       {error && (
@@ -317,12 +360,12 @@ export function PhotoUpload({
             <button
               type="button"
               className={
-                cover === p.key ? "photo-cover selected" : "photo-cover"
+                cover === p.key && !existingCover ? "photo-cover selected" : "photo-cover"
               }
-              onClick={() => setCover(p.key)}
-              aria-pressed={cover === p.key}
+              onClick={() => { dirty(); setExistingCover(""); setCover(p.key); }}
+              aria-pressed={cover === p.key && !existingCover}
             >
-              {cover === p.key ? "✓ Capa" : "Escolher capa"}
+              {cover === p.key && !existingCover ? "✓ Capa" : "Escolher capa"}
             </button>
             <div className="photo-order-controls">
               <button
@@ -351,7 +394,7 @@ export function PhotoUpload({
             </div>
           </div>
         ))}
-        {compact && photos.length < max && (
+        {enabled && compact && photos.length < max && (
           <button
             className="add-more-photos"
             type="button"
@@ -361,6 +404,19 @@ export function PhotoUpload({
           </button>
         )}
       </div>
+      </div>
+      {editorFields && <aside className="album-editor-sidebar">
+        <h3>Capa do álbum</h3>
+        {enabled && <label className="field">Selecionar capa<select aria-label="Selecionar capa" value={existingCover ? 'existing:'+existingCover : cover} onChange={e=>{dirty(); const v=e.target.value; if(v.startsWith('existing:')){setExistingCover(v.slice(9));}else{setExistingCover('');setCover(v);}}}>
+          {!existingPhotos.length && !photos.length && <option value="">Selecione fotos primeiro</option>}
+          {existingPhotos.map((p,i)=><option key={p.id} value={'existing:'+p.id}>Foto salva {i+1}</option>)}
+          {photos.map((p,i)=><option key={p.key} value={p.key}>Foto {i+1} · {p.file.name}</option>)}
+        </select></label>}
+        <input type="hidden" name="coverId" value={enabled ? existingCover : ''}/>
+        {(existingCover || photos.length>0) ? <img className="album-cover-preview" src={existingCover ? '/api/community/media/'+existingCover : photos.find(p=>p.key===cover)?.url ?? photos[0]?.url} alt="Prévia da capa do álbum"/> : <div className="album-cover-empty"><CloudUpload size={32}/><p>A capa aparecerá aqui.</p></div>}
+        <div className="notice"><strong>Onde será publicado?</strong><p>Álbuns publicados ficam disponíveis em Momentos VBJ2 para usuários autenticados, conforme as regras atuais. Rascunhos não são publicados em Momentos VBJ2.</p></div>
+        {!!existingPhotos.length && <><h3>Fotos já salvas</h3><PhotoGallery photos={existingPhotos} title="Fotos do álbum"/></>}
+      </aside>}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import "./community.css";
 import "./product-photo.css";
 import "./store.css";
 import "./responsive.css";
+import "./community-workspace.css";
 export const metadata: Metadata = {
   title: "SSD VBJ2",
   applicationName: "SSD VBJ2",
