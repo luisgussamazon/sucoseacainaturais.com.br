@@ -181,13 +181,13 @@
 }
 .store-page .product-image {
   height: auto;
-  aspect-ratio: 2.85;
+  aspect-ratio: 4 / 3;
   background: #f7f8fa;
   flex-shrink: 0;
 }
 .store-page .product-image img {
   padding: 0;
-  object-fit: cover;
+  object-fit: contain;
   height: 100%;
   width: 100%;
 }
@@ -656,7 +656,7 @@
     gap: 15px;
   }
   .store-page .product-image {
-    aspect-ratio: 2.6;
+    aspect-ratio: 4 / 3;
   }
   .store-page .product-content {
     padding: 12px;
@@ -715,7 +715,7 @@
     font-size: 17px;
   }
   .store-page .product-image {
-    aspect-ratio: 2.7;
+    aspect-ratio: 4 / 3;
   }
   .store-page .product-content {
     padding: 12px 15px 14px;
