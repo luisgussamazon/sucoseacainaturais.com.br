@@ -91,7 +91,9 @@
 }
 .cover {
   width: 100%;
-  aspect-ratio: 2.1;
+  height: auto;
+  display: block;
+  flex-shrink: 0;
   object-fit: contain;
   background: #f5f7f9;
   border-radius: 9px;
@@ -359,9 +361,7 @@
   position: relative;
 }
 .card:has(.cover) > .reward {
-  position: absolute;
-  left: 20px;
-  top: 20px;
+  position: static;
   background: #f2fae9;
   box-shadow: 0 2px 8px #1231;
 }
